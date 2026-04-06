@@ -47,7 +47,6 @@ custom_apps/feedbackapp/
 Repository-level folders:
 
 - `custom_apps/feedbackapp`: actual app source
-- `scripts`: packaging helpers
 - `DEPLOYMENT.md`: manual deployment notes
 
 ## Local Development

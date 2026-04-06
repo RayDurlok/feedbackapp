@@ -2,6 +2,7 @@
 docker-compose.yml
 data/
 dist/
+scripts/
 .approval-reference/
 
 custom_apps/feedbackapp/node_modules/
