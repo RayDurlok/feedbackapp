@@ -1,4 +1,5 @@
 .env
+app.tar.gz
 docker-compose.yml
 data/
 dist/
