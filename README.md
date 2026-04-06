@@ -4,6 +4,8 @@
 
 It adds a **Feedback** sidebar for video files with timestamped comments, timeline markers, comment status handling, and public-share review support.
 
+![Feedback App screenshot](feedbackapp.png)
+
 ## Support
 
 If the project helps you, you can support it here:
