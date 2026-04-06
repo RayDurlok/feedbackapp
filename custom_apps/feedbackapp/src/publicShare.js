@@ -1,3 +1,5 @@
+import { getFeedbackHeaders, publicConfigUrl } from './shared/api.js'
+
 function isPublicSharePage() {
 	return /\/s\/[^/]+/.test(window.location.pathname) && !document.head?.dataset?.user
 }
@@ -76,8 +78,37 @@ function updatePanelState(panel, content, toggleButton, isOpen) {
 	window.dispatchEvent(new Event('resize'))
 }
 
-function mountPublicFeedbackPanel() {
+async function fetchPublicConfig() {
+	const url = publicConfigUrl()
+	if (!url) {
+		return { enabled: true, autoOpenSidebar: true }
+	}
+
+	try {
+		const response = await fetch(url, {
+			headers: getFeedbackHeaders(),
+			credentials: 'same-origin',
+		})
+		const data = await response.json()
+		if (!response.ok) {
+			return { enabled: true, autoOpenSidebar: true }
+		}
+		return {
+			enabled: data.enabled !== false,
+			autoOpenSidebar: Boolean(data.autoOpenSidebar),
+		}
+	} catch {
+		return { enabled: true, autoOpenSidebar: true }
+	}
+}
+
+async function mountPublicFeedbackPanel() {
 	if (!isPublicSharePage()) {
+		return
+	}
+
+	const config = await fetchPublicConfig()
+	if (!config.enabled) {
 		return
 	}
 
@@ -137,7 +168,8 @@ function mountPublicFeedbackPanel() {
 		panelHeader.style.flex = '0 0 auto'
 
 		const panelTitle = document.createElement('strong')
-		panelTitle.textContent = 'Feedback'
+		panelTitle.textContent = getPublicVideoTitle()
+		panelTitle.title = getPublicVideoTitle()
 		panelTitle.style.fontSize = '14px'
 		panelTitle.style.fontWeight = '700'
 		panelTitle.style.color = 'var(--color-main-text)'
@@ -213,7 +245,7 @@ function mountPublicFeedbackPanel() {
 		}
 
 		host.appendChild(panel)
-		updatePanelState(panel, content, toggleButton, true)
+		updatePanelState(panel, content, toggleButton, config.autoOpenSidebar)
 		window.clearInterval(timer)
 	}, 300)
 }

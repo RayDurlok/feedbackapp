@@ -35,6 +35,11 @@ return [
 			'verb' => 'DELETE',
 		],
 		[
+			'name' => 'comments#updatePublicShareAutoOpen',
+			'url' => '/api/files/{fileId}/public-share-auto-open',
+			'verb' => 'PUT',
+		],
+		[
 			'name' => 'publicComments#list',
 			'url' => '/public/comments/{token}',
 			'verb' => 'GET',
@@ -58,6 +63,21 @@ return [
 			'name' => 'publicComments#delete',
 			'url' => '/public/comments/{token}/{commentId}',
 			'verb' => 'DELETE',
+		],
+		[
+			'name' => 'publicConfig#show',
+			'url' => '/public/config/{token}',
+			'verb' => 'GET',
+		],
+		[
+			'name' => 'settings#updatePersonal',
+			'url' => '/settings/personal',
+			'verb' => 'POST',
+		],
+		[
+			'name' => 'settings#updateAdmin',
+			'url' => '/settings/admin',
+			'verb' => 'POST',
 		],
 	],
 ];

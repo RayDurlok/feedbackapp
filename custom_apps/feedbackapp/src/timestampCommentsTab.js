@@ -1,5 +1,5 @@
 import { registerSidebarTab } from '@nextcloud/files'
-import { createUrl, deleteCommentUrl, getFeedbackHeaders, isPublicShareContext, listUrl, updateCommentUrl, updateStatusUrl } from './shared/api.js'
+import { createUrl, deleteCommentUrl, getFeedbackHeaders, isPublicShareContext, listUrl, publicShareAutoOpenUrl, updateCommentUrl, updateStatusUrl } from './shared/api.js'
 import { getActivePlaybackDurationSeconds, getActivePlaybackSeconds, getActiveSeekInput, getActiveVideoElement, getCurrentUserUid, isElementVisible, isVideoNode, seekActiveVideo } from './shared/dom.js'
 import { escapeHtml, formatCreatedAt, formatTimestamp, formatTimestampWithoutMilliseconds } from './shared/formatters.js'
 import { icons } from './shared/icons.js'
@@ -37,6 +37,9 @@ function setupTab() {
 			this._errorMessage = ''
 			this._newMessage = ''
 			this._editingMessage = ''
+			this._publicShareAutoOpen = false
+			this._canManagePublicShareAutoOpen = false
+			this._savingPublicShareAutoOpen = false
 			this._filter = 'open'
 			this._selectedCommentId = null
 			this._timelineVideo = null
@@ -131,6 +134,8 @@ function setupTab() {
 					this._comments = []
 				} else {
 					this._comments = data.comments ?? []
+					this._publicShareAutoOpen = Boolean(data.publicShareAutoOpen)
+					this._canManagePublicShareAutoOpen = Boolean(data.canManagePublicShareAutoOpen)
 				}
 			} catch (error) {
 				console.error(error)
@@ -138,6 +143,39 @@ function setupTab() {
 				this._comments = []
 			} finally {
 				this._loading = false
+				this.render()
+			}
+		}
+
+		async updatePublicShareAutoOpen(enabled) {
+			if (!this.fileId || this._savingPublicShareAutoOpen) {
+				return
+			}
+
+			this._savingPublicShareAutoOpen = true
+			this._errorMessage = ''
+			this.render()
+
+			try {
+				const response = await fetch(publicShareAutoOpenUrl(this.fileId), {
+					method: 'PUT',
+					headers: getFeedbackHeaders({ json: true }),
+					credentials: 'same-origin',
+					body: JSON.stringify({ enabled }),
+				})
+				const data = await response.json()
+
+				if (!response.ok) {
+					this._errorMessage = data.message ?? 'Failed to update public-share setting.'
+				} else {
+					this._publicShareAutoOpen = Boolean(data.publicShareAutoOpen)
+					this._canManagePublicShareAutoOpen = Boolean(data.canManagePublicShareAutoOpen)
+				}
+			} catch (error) {
+				console.error(error)
+				this._errorMessage = 'Failed to update public-share setting.'
+			} finally {
+				this._savingPublicShareAutoOpen = false
 				this.render()
 			}
 		}
@@ -604,6 +642,7 @@ function setupTab() {
 			const editButtons = this.querySelectorAll('[data-feedback-edit]')
 			const deleteButtons = this.querySelectorAll('[data-feedback-delete]')
 			const editMessageInput = this.querySelector('[data-feedback-edit-message]')
+			const publicShareToggle = this.querySelector('[data-feedback-public-share-auto-open]')
 			const saveEditButtons = this.querySelectorAll('[data-feedback-save-edit]')
 			const cancelEditButtons = this.querySelectorAll('[data-feedback-cancel-edit]')
 			const jumpCards = this.querySelectorAll('[data-feedback-card]')
@@ -633,6 +672,10 @@ function setupTab() {
 					event.preventDefault()
 					void this.submitComment()
 				}
+			})
+
+			publicShareToggle?.addEventListener('change', (event) => {
+				void this.updatePublicShareAutoOpen(Boolean(event.target.checked))
 			})
 
 			filterButtons.forEach((button) => {
@@ -779,6 +822,7 @@ function setupTab() {
 						`
 					}).join('')}</ul>`
 
+			const showPublicShareAutoOpenToggle = !isPublicShareContext() && this.fileId && this._canManagePublicShareAutoOpen
 			this.innerHTML = `
 				<section style="padding: 16px;">
 					<div style="margin-bottom: 16px;">
@@ -788,14 +832,27 @@ function setupTab() {
 					${error}
 					<form data-feedback-form style="display: grid; gap: 8px; margin: 0 0 16px;">
 						<p style="margin: 0; font-size: 0.85rem; color: var(--color-text-maxcontrast); line-height: 1.4;">
-							The current video playhead will be saved automatically when you add feedback.
-							Current playhead: <strong data-feedback-current-playhead>${formatTimestampWithoutMilliseconds(0)}</strong>
+							Your comment will be saved at this time of the video:
+							<strong data-feedback-current-playhead>${formatTimestampWithoutMilliseconds(0)}</strong>
 						</p>
 						<label style="display: grid; gap: 4px;">
 							<span style="font-size: 0.85rem; color: var(--color-text-maxcontrast);">Comment:</span>
 							<textarea data-feedback-message rows="3" style="width: 100%; resize: vertical;">${escapeHtml(this._newMessage)}</textarea>
 						</label>
-						<button type="submit" ${this._saving ? 'disabled' : ''} style="justify-self: end;">${this._saving ? 'Saving...' : 'Add feedback'}</button>
+						<div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+							${showPublicShareAutoOpenToggle ? `
+								<label style="display:flex; align-items:center; gap:8px; color: var(--color-text-maxcontrast); font-size: 0.85rem;">
+									<input
+										data-feedback-public-share-auto-open
+										type="checkbox"
+										${this._publicShareAutoOpen ? 'checked' : ''}
+										${this._savingPublicShareAutoOpen ? 'disabled' : ''}
+									>
+									<span>Open feedbackpanel in public shares</span>
+								</label>
+							` : '<span></span>'}
+							<button type="submit" ${this._saving ? 'disabled' : ''} style="justify-self: end;">${this._saving ? 'Saving...' : 'Add feedback'}</button>
+						</div>
 					</form>
 					<div style="display: flex; gap: 8px; margin: 0 0 16px;">
 						<button

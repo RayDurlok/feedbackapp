@@ -83,3 +83,14 @@ export const deleteCommentUrl = (commentId) => {
 		? window.OC.generateUrl(`/apps/feedbackapp/public/comments/${encodeURIComponent(token)}/${commentId}`)
 		: window.OC.generateUrl(`/apps/feedbackapp/api/comments/${commentId}`)
 }
+
+export const publicConfigUrl = () => {
+	const token = getPublicShareToken()
+	return token && isPublicShareContext()
+		? window.OC.generateUrl(`/apps/feedbackapp/public/config/${encodeURIComponent(token)}`)
+		: null
+}
+
+export const publicShareAutoOpenUrl = (fileId) => {
+	return window.OC.generateUrl(`/apps/feedbackapp/api/files/${fileId}/public-share-auto-open`)
+}

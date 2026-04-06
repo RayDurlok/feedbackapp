@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\FeedbackApp\Listener;
 
 use OCA\FeedbackApp\AppInfo\Application;
+use OCA\FeedbackApp\Service\SettingsService;
 use OCA\Files_Sharing\Event\BeforeTemplateRenderedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -13,8 +14,17 @@ use OCP\Util;
 
 /** @template-implements IEventListener<BeforeTemplateRenderedEvent> */
 class LoadPublicShareScripts implements IEventListener {
+	public function __construct(
+		private SettingsService $settingsService,
+	) {
+	}
+
 	public function handle(Event $event): void {
 		if (!($event instanceof BeforeTemplateRenderedEvent)) {
+			return;
+		}
+
+		if (!$this->settingsService->isPublicShareFeedbackEnabled()) {
 			return;
 		}
 
