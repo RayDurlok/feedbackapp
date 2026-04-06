@@ -1,0 +1,23 @@
+{
+  "name": "feedbackapp",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Frontend build for the Feedback App Nextcloud sidebar integration",
+  "type": "module",
+  "scripts": {
+    "build": "vite --mode production build",
+    "watch": "vite --mode development build --watch"
+  },
+  "dependencies": {
+    "@nextcloud/files": "^4.0.0",
+    "vue": "^3.5.16"
+  },
+  "devDependencies": {
+    "@nextcloud/vite-config": "^2.5.2",
+    "vite": "^7.3.1"
+  },
+  "engines": {
+    "node": "^24.0.0",
+    "npm": "^11.3.0"
+  }
+}

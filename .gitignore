@@ -1,0 +1,9 @@
+.env
+data/
+dist/
+.approval-reference/
+
+custom_apps/feedbackapp/node_modules/
+
+.DS_Store
+Thumbs.db
