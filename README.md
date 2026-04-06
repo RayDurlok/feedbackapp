@@ -11,7 +11,7 @@ This project is in active development, but already usable for real testing and m
 Current tested baseline:
 
 - Nextcloud `33`
-- local Docker-based development setup
+- local test instance
 - manual deployment through `custom_apps/feedbackapp`
 
 ## Features
@@ -48,23 +48,8 @@ Repository-level folders:
 
 ### Requirements
 
-- Docker
 - Node.js / npm
 - Nextcloud `33`
-
-### Start the local stack
-
-From the project root:
-
-```powershell
-docker compose up -d
-```
-
-Open Nextcloud in the browser:
-
-```text
-http://localhost:8080
-```
 
 ### Frontend build
 
@@ -77,17 +62,10 @@ npm.cmd run build
 
 ### Enable the app
 
-If your local container is named `nc_app`:
+Enable the app in your local Nextcloud test instance:
 
 ```powershell
-docker exec -u www-data nc_app php occ app:enable feedbackapp
-```
-
-If the app is already enabled and you want to reload it:
-
-```powershell
-docker exec -u www-data nc_app php occ app:disable feedbackapp
-docker exec -u www-data nc_app php occ app:enable feedbackapp
+php occ app:enable feedbackapp
 ```
 
 ## Manual Deployment
