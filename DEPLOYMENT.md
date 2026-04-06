@@ -1,50 +1,47 @@
 # Feedback App Deployment
 
-This project can be deployed manually to another Nextcloud instance without publishing it to the App Store.
+Install the app manually like this:
 
-## What belongs in the deployed app
+1. Upload the app folder to your Nextcloud `custom_apps` directory.
+   The folder on the server must be named `feedbackapp`.
 
-The deployed `feedbackapp` folder should include:
+2. If your uploaded folder includes a version in the name, rename it first:
 
-- `appinfo/`
-- `css/`
-- `js/`
-- `lib/`
-- `templates/`
-- `package.json` is not required at runtime
-- `node_modules/` must not be deployed
-- `src/` is not required at runtime
+```bash
+mv feedbackapp-0.1.5 feedbackapp
+```
 
-## Manual deploy flow
+3. Set the correct owner and permissions:
 
-1. Build the frontend assets locally.
-2. Copy `custom_apps/feedbackapp` to the target Nextcloud's `custom_apps` directory.
-3. Remove dev-only folders before copying or package a clean release folder.
-4. Enable the app in the target instance:
+```bash
+sudo chown -R 33:33 /path/to/nextcloud/custom_apps/feedbackapp
+sudo chmod -R 755 /path/to/nextcloud/custom_apps/feedbackapp
+```
 
-```powershell
+4. Enable the app:
+
+```bash
 php occ app:enable feedbackapp
 ```
 
-If the target Nextcloud runs in Docker:
+If your Nextcloud runs in Docker:
 
-```powershell
+```bash
 docker exec -u www-data <container-name> php occ app:enable feedbackapp
 ```
 
-## Recommended first production-like test
+Notes:
 
-Before deploying to your real daily-use Nextcloud, test on a second non-dev instance with:
+- The server folder must end up as `custom_apps/feedbackapp`
+- Only deploy the built app, not `node_modules` or other local dev files
+- For manual updates, disable the app before replacing files:
 
-- another user account
-- a shared video
-- notification flow
-- comment create/edit/delete
-- open/done switching
-- marker rendering
-- one problematic `.mov` file
+```bash
+php occ app:disable feedbackapp
+```
 
-## Notes
+If your Nextcloud runs in Docker:
 
-- This is a manual deployment path, not an App Store release yet.
-- App Store publishing later will additionally need signing and release metadata cleanup.
+```bash
+docker exec -u www-data <container-name> php occ app:disable feedbackapp
+```

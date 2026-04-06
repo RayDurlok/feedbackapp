@@ -79,32 +79,20 @@ php occ app:enable feedbackapp
 
 ## Manual Deployment
 
-For manual deployments, only the runtime-relevant app files should be copied:
+Upload the built app to your server so the target folder is:
 
-- `appinfo/`
-- `css/`
-- `js/`
-- `lib/`
-- `templates/`
+- `custom_apps/feedbackapp`
 
-Do **not** deploy:
+Then set owner and permissions and enable it with:
 
-- `node_modules/`
-- `src/`
-- local dev-only folders
+```bash
+sudo chown -R 33:33 /path/to/nextcloud/custom_apps/feedbackapp
+sudo chmod -R 755 /path/to/nextcloud/custom_apps/feedbackapp
+php occ app:enable feedbackapp
+```
 
-See `DEPLOYMENT.md` for the current deploy workflow.
+See `DEPLOYMENT.md` for the short step-by-step version.
 
-## Recommended Test Scenarios
-
-- Logged-in user comments on a video
-- Comment click jumps to the correct timestamp
-- Timeline markers match comment state
-- Shared video between two users
-- Notification flow for file owner
-- Public share with guest feedback
-- Public guest edit/delete of own comments
-- One problematic `.mov` file
 
 ## Current Limitations
 
@@ -118,7 +106,7 @@ See `DEPLOYMENT.md` for the current deploy workflow.
 - Backend tests
 - Frontend cleanup / refactor
 - Packaging and release hardening
-- App Store preparation
+- App Store publishing
 
 ## License
 
