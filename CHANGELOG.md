@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.1.5 - 2026-04-06
+
+### Added
+
+- Admin and personal settings for public-share feedback behavior
+- Per-video toggle to control whether the feedback panel should auto-open in public shares
+- Dedicated public-share config endpoint for server-side public review defaults
+
+### Changed
+
+- Public-share feedback auto-open now respects server-side settings instead of browser-local preferences
+- Refined sidebar wording for the public-share auto-open toggle and current playhead helper text
+- Added Feedback App settings section assets and forms for Nextcloud settings pages
+
 ## 0.1.3 - 2026-04-06
 
 ### Added
