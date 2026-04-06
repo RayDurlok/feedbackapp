@@ -8,7 +8,8 @@ It adds a **Feedback** sidebar for video files with timestamped comments, timeli
 
 If the project helps you, you can support it here:
 
-- [Buy Me a Coffee](https://buymeacoffee.com/hesoyammw3k)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=000000)](https://buymeacoffee.com/hesoyammw3k)
+
 
 
 ## Status
