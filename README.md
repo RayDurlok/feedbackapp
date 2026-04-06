@@ -4,6 +4,12 @@
 
 It adds a **Feedback** sidebar for video files with timestamped comments, timeline markers, comment status handling, and public-share review support.
 
+## Support
+
+If the project helps you, you can support it here:
+
+- [Buy Me a Coffee](https://buymeacoffee.com/hesoyammw3k)
+
 ## Status
 
 This project is in active development, but already usable for real testing and manual deployment.
@@ -113,4 +119,4 @@ See `DEPLOYMENT.md` for the current deploy workflow.
 
 ## License
 
-AGPL
+This project is licensed under the GNU Affero General Public License v3.0 or later.
