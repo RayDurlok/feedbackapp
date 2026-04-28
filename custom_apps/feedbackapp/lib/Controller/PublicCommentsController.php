@@ -47,10 +47,10 @@ class PublicCommentsController extends PublicShareController {
 
 	#[PublicPage]
 	#[NoCSRFRequired]
-	public function list(string $token): DataResponse {
+	public function list(string $token, ?string $path = null): DataResponse {
 		try {
 			return new DataResponse([
-				'comments' => $this->commentService->listForPublicShare($token, $this->getGuestId()),
+				'comments' => $this->commentService->listForPublicShare($token, $this->getGuestId(), $path),
 			]);
 		} catch (FeedbackException $exception) {
 			return new DataResponse([
@@ -61,10 +61,10 @@ class PublicCommentsController extends PublicShareController {
 
 	#[PublicPage]
 	#[NoCSRFRequired]
-	public function create(string $token, int $timestampMilliseconds, string $message): DataResponse {
+	public function create(string $token, int $timestampMilliseconds, string $message, ?string $path = null): DataResponse {
 		try {
 			return new DataResponse([
-				'comment' => $this->commentService->createForPublicShare($token, $this->getGuestId(), $timestampMilliseconds, $message),
+				'comment' => $this->commentService->createForPublicShare($token, $this->getGuestId(), $timestampMilliseconds, $message, $path),
 			], 201);
 		} catch (FeedbackException $exception) {
 			return new DataResponse([
@@ -75,10 +75,10 @@ class PublicCommentsController extends PublicShareController {
 
 	#[PublicPage]
 	#[NoCSRFRequired]
-	public function updateStatus(string $token, int $commentId, string $status): DataResponse {
+	public function updateStatus(string $token, int $commentId, string $status, ?string $path = null): DataResponse {
 		try {
 			return new DataResponse([
-				'comment' => $this->commentService->updateStatusForPublicShare($token, $this->getGuestId(), $commentId, $status),
+				'comment' => $this->commentService->updateStatusForPublicShare($token, $this->getGuestId(), $commentId, $status, $path),
 			]);
 		} catch (FeedbackException $exception) {
 			return new DataResponse([
@@ -89,10 +89,10 @@ class PublicCommentsController extends PublicShareController {
 
 	#[PublicPage]
 	#[NoCSRFRequired]
-	public function update(string $token, int $commentId, string $message): DataResponse {
+	public function update(string $token, int $commentId, string $message, ?string $path = null): DataResponse {
 		try {
 			return new DataResponse([
-				'comment' => $this->commentService->updateMessageForPublicShare($token, $this->getGuestId(), $commentId, $message),
+				'comment' => $this->commentService->updateMessageForPublicShare($token, $this->getGuestId(), $commentId, $message, $path),
 			]);
 		} catch (FeedbackException $exception) {
 			return new DataResponse([
@@ -103,9 +103,9 @@ class PublicCommentsController extends PublicShareController {
 
 	#[PublicPage]
 	#[NoCSRFRequired]
-	public function delete(string $token, int $commentId): DataResponse {
+	public function delete(string $token, int $commentId, ?string $path = null): DataResponse {
 		try {
-			$this->commentService->deleteCommentForPublicShare($token, $this->getGuestId(), $commentId);
+			$this->commentService->deleteCommentForPublicShare($token, $this->getGuestId(), $commentId, $path);
 			return new DataResponse([], 204);
 		} catch (FeedbackException $exception) {
 			return new DataResponse([

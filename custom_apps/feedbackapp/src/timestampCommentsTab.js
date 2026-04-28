@@ -290,6 +290,20 @@ function setupTab() {
 			})
 		}
 
+		refreshPublicShareContext() {
+			if (!isPublicShareContext()) {
+				return
+			}
+
+			this._selectedCommentId = null
+			this._newMessage = ''
+			this._editingCommentId = null
+			this._editingMessage = ''
+			this._errorMessage = ''
+			this.render()
+			void this.loadComments()
+		}
+
 		setupVisibilityObserver() {
 			if (this._visibilityObserver !== null) {
 				return

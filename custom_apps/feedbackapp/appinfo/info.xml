@@ -5,7 +5,7 @@
 	<name>Feedback</name>
 	<summary>Timestamped video review and feedback workflow for Nextcloud</summary>
 	<description>Feedback adds timestamped video review to Nextcloud Files and public shares. Reviewers can comment at the current playhead, jump back to feedback entries, track open and done items, and collaborate with timeline markers and notifications.</description>
-	<version>0.1.5</version>
+	<version>0.1.13</version>
 	<licence>AGPL-3.0-or-later</licence>
 	<author homepage="https://github.com/RayDurlok">Jakob</author>
 	<documentation>

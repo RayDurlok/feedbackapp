@@ -9,6 +9,7 @@ use OCA\FeedbackApp\Exception\FeedbackException;
 use OCP\Constants;
 use OCP\BackgroundJob\IJobList;
 use OCP\Files\File;
+use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
 use OCP\IDBConnection;
@@ -120,13 +121,13 @@ class CommentService {
 		return $comment;
 	}
 
-	public function listForPublicShare(string $token, string $guestId): array {
-		$file = $this->assertPublicVideoShareAccess($token);
+	public function listForPublicShare(string $token, string $guestId, ?string $path = null): array {
+		$file = $this->assertPublicVideoShareAccess($token, $path);
 		return $this->fetchCommentsForFile($file->getId(), null, $guestId);
 	}
 
-	public function createForPublicShare(string $token, string $guestId, int $timestampMilliseconds, string $message): array {
-		$file = $this->assertPublicVideoShareAccess($token);
+	public function createForPublicShare(string $token, string $guestId, int $timestampMilliseconds, string $message, ?string $path = null): array {
+		$file = $this->assertPublicVideoShareAccess($token, $path);
 		$message = trim($message);
 		if ($message === '') {
 			throw new FeedbackException('Message is required', 400);
@@ -173,13 +174,13 @@ class CommentService {
 		];
 	}
 
-	public function updateStatusForPublicShare(string $token, string $guestId, int $commentId, string $status): array {
+	public function updateStatusForPublicShare(string $token, string $guestId, int $commentId, string $status, ?string $path = null): array {
 		$status = strtolower(trim($status));
 		if (!in_array($status, ['open', 'done'], true)) {
 			throw new FeedbackException('Invalid status', 400);
 		}
 
-		$file = $this->assertPublicVideoShareAccess($token);
+		$file = $this->assertPublicVideoShareAccess($token, $path);
 		$comment = $this->getCommentById($commentId, null, $guestId);
 		if ($comment['fileId'] !== $file->getId()) {
 			throw new FeedbackException('Feedback not accessible', 403);
@@ -199,13 +200,13 @@ class CommentService {
 		return $this->getCommentById($commentId, null, $guestId);
 	}
 
-	public function updateMessageForPublicShare(string $token, string $guestId, int $commentId, string $message): array {
+	public function updateMessageForPublicShare(string $token, string $guestId, int $commentId, string $message, ?string $path = null): array {
 		$message = trim($message);
 		if ($message === '') {
 			throw new FeedbackException('Message is required', 400);
 		}
 
-		$file = $this->assertPublicVideoShareAccess($token);
+		$file = $this->assertPublicVideoShareAccess($token, $path);
 		$comment = $this->getCommentById($commentId, null, $guestId);
 		if ($comment['fileId'] !== $file->getId()) {
 			throw new FeedbackException('Feedback not accessible', 403);
@@ -224,8 +225,8 @@ class CommentService {
 		return $this->getCommentById($commentId, null, $guestId);
 	}
 
-	public function deleteCommentForPublicShare(string $token, string $guestId, int $commentId): void {
-		$file = $this->assertPublicVideoShareAccess($token);
+	public function deleteCommentForPublicShare(string $token, string $guestId, int $commentId, ?string $path = null): void {
+		$file = $this->assertPublicVideoShareAccess($token, $path);
 		$comment = $this->getCommentById($commentId, null, $guestId);
 		if ($comment['fileId'] !== $file->getId()) {
 			throw new FeedbackException('Feedback not accessible', 403);
@@ -345,7 +346,7 @@ class CommentService {
 		return $node;
 	}
 
-	private function assertPublicVideoShareAccess(string $token): File {
+	private function assertPublicVideoShareAccess(string $token, ?string $path = null): File {
 		try {
 			$share = $this->shareManager->getShareByToken($token);
 		} catch (ShareNotFound) {
@@ -357,15 +358,34 @@ class CommentService {
 		}
 
 		$node = $share->getNode();
-		if (!$node instanceof File) {
-			throw new FeedbackException('Feedback is only available for directly shared video files', 400);
+		if ($node instanceof File) {
+			if (!str_starts_with($node->getMimetype(), 'video/')) {
+				throw new FeedbackException('Feedback is only available for video files', 400);
+			}
+
+			return $node;
 		}
 
-		if (!str_starts_with($node->getMimetype(), 'video/')) {
+		if (!$node instanceof Folder) {
+			throw new FeedbackException('Feedback is only available for shared video files', 400);
+		}
+
+		$relativePath = trim((string)$path, '/');
+		if ($relativePath === '') {
+			throw new FeedbackException('No shared video selected', 400);
+		}
+
+		try {
+			$resolvedNode = $node->get($relativePath);
+		} catch (NotFoundException) {
+			throw new FeedbackException('Shared video not found', 404);
+		}
+
+		if (!$resolvedNode instanceof File || !str_starts_with($resolvedNode->getMimetype(), 'video/')) {
 			throw new FeedbackException('Feedback is only available for video files', 400);
 		}
 
-		return $node;
+		return $resolvedNode;
 	}
 
 	private function fetchCommentsForFile(int $fileId, ?string $currentUid = null, ?string $guestId = null): array {

@@ -7,6 +7,47 @@ export function isPublicShareContext() {
 	return getPublicShareToken() !== null && !document.head?.dataset?.user
 }
 
+function getActivePublicVideoElement() {
+	return document.querySelector('.plyr video, video')
+}
+
+export function getPublicShareFilePath() {
+	if (!isPublicShareContext()) {
+		return null
+	}
+
+	const token = getPublicShareToken()
+	const video = getActivePublicVideoElement()
+	const source = video?.currentSrc || video?.getAttribute('src') || ''
+	if (!token || source === '') {
+		return null
+	}
+
+	try {
+		const url = new URL(source, window.location.origin)
+		const prefix = `/public.php/dav/files/${encodeURIComponent(token)}/`
+		const offset = url.pathname.indexOf(prefix)
+		if (offset === -1) {
+			return null
+		}
+
+		const path = url.pathname.slice(offset + prefix.length)
+		return path === '' ? null : decodeURIComponent(path)
+	} catch {
+		return null
+	}
+}
+
+function withPublicPath(url) {
+	const path = getPublicShareFilePath()
+	if (!path) {
+		return url
+	}
+
+	const separator = url.includes('?') ? '&' : '?'
+	return `${url}${separator}path=${encodeURIComponent(path)}`
+}
+
 export function getPublicGuestId() {
 	if (!isPublicShareContext()) {
 		return null
@@ -52,42 +93,42 @@ export function getFeedbackHeaders({ json = false } = {}) {
 export const listUrl = (fileId) => {
 	const token = getPublicShareToken()
 	return token && isPublicShareContext()
-		? window.OC.generateUrl(`/apps/feedbackapp/public/comments/${encodeURIComponent(token)}`)
+		? withPublicPath(window.OC.generateUrl(`/apps/feedbackapp/public/comments/${encodeURIComponent(token)}`))
 		: window.OC.generateUrl(`/apps/feedbackapp/api/comments/${fileId}`)
 }
 
 export const createUrl = () => {
 	const token = getPublicShareToken()
 	return token && isPublicShareContext()
-		? window.OC.generateUrl(`/apps/feedbackapp/public/comments/${encodeURIComponent(token)}`)
+		? withPublicPath(window.OC.generateUrl(`/apps/feedbackapp/public/comments/${encodeURIComponent(token)}`))
 		: window.OC.generateUrl('/apps/feedbackapp/api/comments')
 }
 
 export const updateStatusUrl = (commentId) => {
 	const token = getPublicShareToken()
 	return token && isPublicShareContext()
-		? window.OC.generateUrl(`/apps/feedbackapp/public/comments/${encodeURIComponent(token)}/${commentId}/status`)
+		? withPublicPath(window.OC.generateUrl(`/apps/feedbackapp/public/comments/${encodeURIComponent(token)}/${commentId}/status`))
 		: window.OC.generateUrl(`/apps/feedbackapp/api/comments/${commentId}/status`)
 }
 
 export const updateCommentUrl = (commentId) => {
 	const token = getPublicShareToken()
 	return token && isPublicShareContext()
-		? window.OC.generateUrl(`/apps/feedbackapp/public/comments/${encodeURIComponent(token)}/${commentId}`)
+		? withPublicPath(window.OC.generateUrl(`/apps/feedbackapp/public/comments/${encodeURIComponent(token)}/${commentId}`))
 		: window.OC.generateUrl(`/apps/feedbackapp/api/comments/${commentId}`)
 }
 
 export const deleteCommentUrl = (commentId) => {
 	const token = getPublicShareToken()
 	return token && isPublicShareContext()
-		? window.OC.generateUrl(`/apps/feedbackapp/public/comments/${encodeURIComponent(token)}/${commentId}`)
+		? withPublicPath(window.OC.generateUrl(`/apps/feedbackapp/public/comments/${encodeURIComponent(token)}/${commentId}`))
 		: window.OC.generateUrl(`/apps/feedbackapp/api/comments/${commentId}`)
 }
 
 export const publicConfigUrl = () => {
 	const token = getPublicShareToken()
 	return token && isPublicShareContext()
-		? window.OC.generateUrl(`/apps/feedbackapp/public/config/${encodeURIComponent(token)}`)
+		? withPublicPath(window.OC.generateUrl(`/apps/feedbackapp/public/config/${encodeURIComponent(token)}`))
 		: null
 }
 

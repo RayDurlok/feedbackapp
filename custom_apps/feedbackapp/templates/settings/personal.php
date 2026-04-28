@@ -15,7 +15,7 @@ $requestToken = (string) ($_['requesttoken'] ?? \OC::$server->getCsrfTokenManage
 		<p>
 			<label>
 				<input type="checkbox" name="autoOpenPublicShareSidebar" value="1" <?php if (!empty($_['autoOpenPublicShareSidebar'])) { print_unescaped('checked'); } ?>>
-				Auto open sidebar in public share
+				Open feedbackpanel in public shares
 			</label>
 		</p>
 		<p>

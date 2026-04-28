@@ -10,6 +10,7 @@ use OCA\Files_Sharing\Event\BeforeTemplateRenderedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\Files\File;
+use OCP\Files\Folder;
 use OCP\Util;
 
 /** @template-implements IEventListener<BeforeTemplateRenderedEvent> */
@@ -33,7 +34,11 @@ class LoadPublicShareScripts implements IEventListener {
 		}
 
 		$node = $event->getShare()->getNode();
-		if (!$node instanceof File || !str_starts_with($node->getMimetype(), 'video/')) {
+		if ($node instanceof File && !str_starts_with($node->getMimetype(), 'video/')) {
+			return;
+		}
+
+		if (!$node instanceof File && !$node instanceof Folder) {
 			return;
 		}
 
