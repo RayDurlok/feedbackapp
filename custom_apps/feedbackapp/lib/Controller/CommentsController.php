@@ -40,6 +40,21 @@ class CommentsController extends Controller {
 	/**
 	 * @NoAdminRequired
 	 */
+	public function fileInfoByPath(string $path): DataResponse {
+		try {
+			return new DataResponse([
+				'file' => $this->commentService->getVideoFileInfoForCurrentUserPath($path),
+			]);
+		} catch (FeedbackException $exception) {
+			return new DataResponse([
+				'message' => $exception->getMessage(),
+			], $exception->getStatusCode());
+		}
+	}
+
+	/**
+	 * @NoAdminRequired
+	 */
 	public function create(int $fileId, int $timestampMilliseconds, string $message): DataResponse {
 		try {
 			return new DataResponse([

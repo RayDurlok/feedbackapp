@@ -19,6 +19,12 @@ $requestToken = (string) ($_['requesttoken'] ?? \OC::$server->getCsrfTokenManage
 			</label>
 		</p>
 		<p>
+			<label>
+				<input type="checkbox" name="showVideoViewerQuickAccess" value="1" <?php if (!array_key_exists('showVideoViewerQuickAccess', $_) || !empty($_['showVideoViewerQuickAccess'])) { print_unescaped('checked'); } ?>>
+				Show Feedback Panel button in video viewer
+			</label>
+		</p>
+		<p>
 			<button class="button-primary" type="submit">Save</button>
 		</p>
 	</form>

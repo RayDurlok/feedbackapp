@@ -20,6 +20,11 @@ return [
 			'verb' => 'POST',
 		],
 		[
+			'name' => 'comments#fileInfoByPath',
+			'url' => '/api/file-info',
+			'verb' => 'GET',
+		],
+		[
 			'name' => 'comments#updateStatus',
 			'url' => '/api/comments/{commentId}/status',
 			'verb' => 'PUT',
@@ -73,6 +78,11 @@ return [
 			'name' => 'settings#updatePersonal',
 			'url' => '/settings/personal',
 			'verb' => 'POST',
+		],
+		[
+			'name' => 'settings#viewerConfig',
+			'url' => '/settings/viewer-config',
+			'verb' => 'GET',
 		],
 		[
 			'name' => 'settings#updateAdmin',

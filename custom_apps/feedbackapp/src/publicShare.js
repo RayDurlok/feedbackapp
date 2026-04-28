@@ -31,18 +31,45 @@ function getPublicViewerHost() {
 		|| document.body
 }
 
-function getPublicHeaderAnchor() {
-	return document.querySelector('.modal-header .unfold-more-horizontal-icon')?.closest('button, [role="button"]')
-		|| document.querySelector('button[aria-label="Close"]')
-		|| document.querySelector('button[aria-label="Schließen"]')
-		|| document.querySelector('button[aria-label="Actions"]')
-		|| document.querySelector('button[aria-label="Aktionen"]')
-		|| document.querySelector('button[aria-label="More actions"]')
-		|| document.querySelector('button[aria-label="Mehr Aktionen"]')
+function isVisibleElement(element) {
+	if (!element) {
+		return false
+	}
+
+	const rect = element.getBoundingClientRect()
+	const style = window.getComputedStyle(element)
+	return rect.width > 0
+		&& rect.height > 0
+		&& style.display !== 'none'
+		&& style.visibility !== 'hidden'
 }
 
-function getPublicHeaderIconsMenu() {
-	return document.querySelector('.modal-header .icons-menu')
+function getPublicViewerHeader() {
+	const host = getPublicViewerHost()
+	const scopedHeader = [...host.querySelectorAll?.('.modal-header') ?? []].find(isVisibleElement)
+	if (scopedHeader) {
+		return scopedHeader
+	}
+
+	const title = getPublicVideoTitle()
+	return [...document.querySelectorAll('.modal-header')]
+		.find((header) => isVisibleElement(header) && (!title || header.textContent.includes(title)))
+		?? null
+}
+
+function getPublicHeaderAnchor(header) {
+	const root = header ?? document
+	return root.querySelector('.unfold-more-horizontal-icon')?.closest('button, [role="button"]')
+		|| root.querySelector('button[aria-label="Close"]')
+		|| root.querySelector('button[aria-label="Schließen"]')
+		|| root.querySelector('button[aria-label="Actions"]')
+		|| root.querySelector('button[aria-label="Aktionen"]')
+		|| root.querySelector('button[aria-label="More actions"]')
+		|| root.querySelector('button[aria-label="Mehr Aktionen"]')
+}
+
+function getPublicHeaderIconsMenu(header) {
+	return header?.querySelector('.icons-menu') ?? null
 }
 
 const publicFeedbackState = {
@@ -173,16 +200,20 @@ async function mountPublicFeedbackPanel() {
 			const panel = document.createElement('aside')
 			panel.id = 'feedbackapp-public-panel'
 			panel.dataset.expandedWidth = '380'
+			panel.dataset.open = 'false'
 			panel.style.right = '0'
 			panel.style.bottom = '0'
-			panel.style.width = '380px'
+			panel.style.width = '0'
 			panel.style.maxWidth = 'min(38vw, 420px)'
 			panel.style.minWidth = '0'
 			panel.style.background = 'var(--color-main-background)'
 			panel.style.borderLeft = '1px solid var(--color-border)'
+			panel.style.borderLeftColor = 'transparent'
 			panel.style.boxSizing = 'border-box'
 			panel.style.overflow = 'hidden'
 			panel.style.zIndex = '2147483646'
+			panel.style.boxShadow = 'none'
+			panel.style.pointerEvents = 'none'
 			panel.style.transition = 'width 180ms ease, box-shadow 180ms ease, border-color 180ms ease'
 
 			const content = document.createElement('div')
@@ -190,6 +221,8 @@ async function mountPublicFeedbackPanel() {
 			content.style.display = 'flex'
 			content.style.flexDirection = 'column'
 			content.style.background = 'var(--color-main-background)'
+			content.style.opacity = '0'
+			content.style.pointerEvents = 'none'
 			content.style.transition = 'opacity 120ms ease'
 
 			const panelHeader = document.createElement('div')
@@ -286,8 +319,9 @@ async function mountPublicFeedbackPanel() {
 			publicFeedbackState.host = host
 		}
 
-		const headerAnchor = getPublicHeaderAnchor()
-		const iconsMenu = getPublicHeaderIconsMenu()
+		const viewerHeader = getPublicViewerHeader()
+		const headerAnchor = getPublicHeaderAnchor(viewerHeader)
+		const iconsMenu = getPublicHeaderIconsMenu(viewerHeader)
 		if (headerAnchor?.parentElement && toggleButton.parentElement !== headerAnchor.parentElement) {
 			headerAnchor.parentElement.insertBefore(toggleButton, headerAnchor)
 			toggleButton.style.position = 'relative'

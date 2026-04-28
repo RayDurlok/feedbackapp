@@ -46,6 +46,41 @@ class CommentService {
 		return $this->fetchCommentsForFile($fileId, $currentUid, null);
 	}
 
+	public function getVideoFileInfoForCurrentUserPath(string $path): array {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			throw new FeedbackException('User not logged in', 401);
+		}
+
+		$relativePath = trim($path, '/');
+		if ($relativePath === '') {
+			throw new FeedbackException('No file selected', 400);
+		}
+
+		try {
+			$node = $this->rootFolder->getUserFolder($user->getUID())->get($relativePath);
+		} catch (NotFoundException) {
+			throw new FeedbackException('File not accessible', 404);
+		}
+
+		if (!$node instanceof File || !str_starts_with($node->getMimetype(), 'video/')) {
+			throw new FeedbackException('Feedback is only available for video files', 400);
+		}
+
+		return [
+			'id' => $node->getId(),
+			'fileid' => $node->getId(),
+			'basename' => $node->getName(),
+			'mime' => $node->getMimetype(),
+			'mimetype' => $node->getMimetype(),
+			'path' => '/' . $relativePath,
+			'root' => '/files/' . $user->getUID(),
+			'owner' => $user->getUID(),
+			'permissions' => $node->getPermissions(),
+			'size' => $node->getSize(),
+		];
+	}
+
 	public function createForFile(int $fileId, int $timestampMilliseconds, string $message): array {
 		$user = $this->userSession->getUser();
 		if ($user === null) {

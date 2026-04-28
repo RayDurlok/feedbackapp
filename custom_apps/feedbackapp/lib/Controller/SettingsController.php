@@ -8,6 +8,7 @@ use OCA\FeedbackApp\AppInfo\Application;
 use OCA\FeedbackApp\Exception\FeedbackException;
 use OCA\FeedbackApp\Service\SettingsService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\Http\RedirectResponse;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -26,13 +27,33 @@ class SettingsController extends Controller {
 		parent::__construct($appName, $request);
 	}
 
-	public function updatePersonal(bool $autoOpenPublicShareSidebar = false): RedirectResponse {
+	/**
+	 * @NoAdminRequired
+	 */
+	public function viewerConfig(): DataResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new DataResponse([
+				'showVideoViewerQuickAccess' => false,
+			], 401);
+		}
+
+		return new DataResponse([
+			'showVideoViewerQuickAccess' => $this->settingsService->getUserVideoViewerQuickAccess($user->getUID()),
+		]);
+	}
+
+	/**
+	 * @NoAdminRequired
+	 */
+	public function updatePersonal(bool $autoOpenPublicShareSidebar = false, bool $showVideoViewerQuickAccess = false): RedirectResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			throw new FeedbackException('User not logged in', 401);
 		}
 
 		$this->settingsService->setUserPublicShareAutoOpen($user->getUID(), $autoOpenPublicShareSidebar);
+		$this->settingsService->setUserVideoViewerQuickAccess($user->getUID(), $showVideoViewerQuickAccess);
 
 		return new RedirectResponse($this->getSettingsReferer('settings.PersonalSettings.index'));
 	}

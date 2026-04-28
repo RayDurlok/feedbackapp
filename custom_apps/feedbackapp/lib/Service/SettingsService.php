@@ -15,6 +15,7 @@ use OCP\IUserSession;
 class SettingsService {
 	public const APP_PUBLIC_SHARE_ENABLED = 'enable_public_share_feedback';
 	public const USER_PUBLIC_SHARE_AUTO_OPEN = 'auto_open_public_share_sidebar';
+	public const USER_VIDEO_VIEWER_QUICK_ACCESS = 'show_video_viewer_quick_access';
 
 	public function __construct(
 		private IConfig $config,
@@ -46,6 +47,22 @@ class SettingsService {
 		}
 
 		$this->config->setUserValue($uid, 'feedbackapp', self::USER_PUBLIC_SHARE_AUTO_OPEN, $enabled ? 'yes' : 'no');
+	}
+
+	public function getUserVideoViewerQuickAccess(string $uid): bool {
+		if ($uid === '') {
+			return true;
+		}
+
+		return $this->config->getUserValue($uid, 'feedbackapp', self::USER_VIDEO_VIEWER_QUICK_ACCESS, 'yes') === 'yes';
+	}
+
+	public function setUserVideoViewerQuickAccess(string $uid, bool $enabled): void {
+		if ($uid === '') {
+			return;
+		}
+
+		$this->config->setUserValue($uid, 'feedbackapp', self::USER_VIDEO_VIEWER_QUICK_ACCESS, $enabled ? 'yes' : 'no');
 	}
 
 	public function getEffectivePublicShareAutoOpenForCurrentUser(int $fileId): bool {
