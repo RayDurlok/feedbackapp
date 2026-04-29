@@ -18,6 +18,29 @@ registerSidebarTab({
 	tagName,
 })
 
+function renderLinkedText(value) {
+	const text = String(value ?? '')
+	const urlPattern = /(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+)/gi
+	let html = ''
+	let lastIndex = 0
+	let match
+
+	while ((match = urlPattern.exec(text)) !== null) {
+		const rawMatch = match[0]
+		const trailing = rawMatch.match(/[.,!?;:)]*$/)?.[0] ?? ''
+		const linkText = trailing ? rawMatch.slice(0, -trailing.length) : rawMatch
+		const href = linkText.startsWith('www.') ? `https://${linkText}` : linkText
+
+		html += escapeHtml(text.slice(lastIndex, match.index))
+		html += `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" style="color: var(--color-primary-element); text-decoration: underline;">${escapeHtml(linkText)}</a>`
+		html += escapeHtml(trailing)
+		lastIndex = match.index + rawMatch.length
+	}
+
+	html += escapeHtml(text.slice(lastIndex))
+	return html
+}
+
 function setupTab() {
 	if (window.customElements.get(tagName)) {
 		return
@@ -825,7 +848,7 @@ function setupTab() {
 
 			jumpCards.forEach((card) => {
 				card.addEventListener('click', (event) => {
-					if (event.target.closest('button, textarea, input, label')) {
+					if (event.target.closest('a, button, textarea, input, label')) {
 						return
 					}
 
@@ -880,7 +903,7 @@ function setupTab() {
 								style="display:block;width:100%;text-align:left;cursor:pointer;"
 							>
 								${headerBlock}
-								<p style="margin: 0; line-height: 1.4; cursor:pointer;">${escapeHtml(comment.message)}</p>
+								<p style="margin: 0; line-height: 1.4; cursor:pointer;">${renderLinkedText(comment.message)}</p>
 							</div>`
 
 						return `
