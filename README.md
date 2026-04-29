@@ -21,8 +21,9 @@ This project is in active development, but already usable for real testing and m
 Current tested baseline:
 
 - Nextcloud `33`
-- local test instance
+- local Docker test instance
 - manual deployment through `custom_apps/feedbackapp`
+- current release: `0.2.0`
 
 ## Features
 
@@ -35,6 +36,10 @@ Current tested baseline:
 - Notifications for file owners
 - Public-share feedback panel for guest reviewers
 - Guest comment edit/delete for the same browser identity
+- Feedback Panel quick-access button in the video viewer
+- One-click view-only public share link creation from the Feedback sidebar
+- Per-video public-share panel auto-open toggle
+- Clickable URLs in feedback comments
 
 ## Project Structure
 
@@ -91,13 +96,12 @@ sudo chmod -R 755 /path/to/nextcloud/custom_apps/feedbackapp
 php occ app:enable feedbackapp
 ```
 
-See `DEPLOYMENT.md` for the short step-by-step version.
+See `DEPLOYMENT.md` for local and SSH-based deployment examples.
 
 
 ## Current Limitations
 
-- The app is not packaged for the Nextcloud App Store yet
-- Public-share support is currently focused on directly shared video files
+- The app is not published in the Nextcloud App Store yet
 - Automated tests are not set up yet
 - The app still needs hardening and cleanup before a store release
 

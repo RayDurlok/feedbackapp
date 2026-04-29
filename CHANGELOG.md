@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.0 - 2026-04-29
+
+### Added
+
+- Feedback Panel quick-access button in the logged-in Nextcloud video viewer
+- Feedback Panel quick-access button for public-share video viewer pages
+- Support for shared folders containing multiple video files in public shares
+- One-click view-only public share link creation from the Feedback sidebar
+- Clickable URLs in feedback comments, including links inside normal text
+
+### Changed
+
+- Public-share panel placement is more robust across Chrome and Firefox
+- Public-share panel starts closed unless auto-open is explicitly enabled
+- Share shortcut shows an inline `Copied` state after copying the public link
+- Release version bumped to `0.2.0`
+
+### Fixed
+
+- Feedback button visibility in Firefox public shares
+- Public-share folder video switching no longer drops the Feedback button
+- Logged-in viewer quick-access now opens the existing Nextcloud sidebar with the Feedback tab focused
+
 ## 0.1.5 - 2026-04-06
 
 ### Added
