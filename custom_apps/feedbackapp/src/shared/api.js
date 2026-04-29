@@ -135,3 +135,7 @@ export const publicConfigUrl = () => {
 export const publicShareAutoOpenUrl = (fileId) => {
 	return window.OC.generateUrl(`/apps/feedbackapp/api/files/${fileId}/public-share-auto-open`)
 }
+
+export const publicShareLinkUrl = (fileId) => {
+	return window.OC.generateUrl(`/apps/feedbackapp/api/files/${fileId}/public-share-link`)
+}

@@ -13,10 +13,12 @@ use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
 use OCP\IDBConnection;
+use OCP\IURLGenerator;
 use OCP\IUserManager;
 use OCP\IUserSession;
 use OCP\Files\Node;
 use OCP\Share\Exceptions\ShareNotFound;
+use OCP\Share\IShare;
 use OCP\Share\IManager as ShareManager;
 
 class CommentService {
@@ -29,6 +31,7 @@ class CommentService {
 		private IUserSession $userSession,
 		private IUserManager $userManager,
 		private ShareManager $shareManager,
+		private IURLGenerator $urlGenerator,
 		private FeedbackNotificationService $feedbackNotificationService,
 		private IJobList $jobList,
 	) {
@@ -78,6 +81,27 @@ class CommentService {
 			'owner' => $user->getUID(),
 			'permissions' => $node->getPermissions(),
 			'size' => $node->getSize(),
+		];
+	}
+
+	public function createViewOnlyPublicShareLink(int $fileId): array {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			throw new FeedbackException('User not logged in', 401);
+		}
+
+		if (!$this->shareManager->shareApiEnabled() || !$this->shareManager->shareApiAllowLinks()) {
+			throw new FeedbackException('Public link sharing is disabled', 403);
+		}
+
+		$node = $this->assertVideoFileAccess($fileId);
+		$existingShare = $this->findViewOnlyPublicLinkShare($user->getUID(), $node);
+		$share = $existingShare ?? $this->createViewOnlyPublicLinkShare($user->getUID(), $node);
+
+		return [
+			'url' => $this->urlGenerator->getAbsoluteURL('/s/' . $share->getToken()),
+			'token' => $share->getToken(),
+			'created' => $existingShare === null,
 		];
 	}
 
@@ -379,6 +403,28 @@ class CommentService {
 		}
 
 		return $node;
+	}
+
+	private function findViewOnlyPublicLinkShare(string $uid, Node $node): ?IShare {
+		$shares = $this->shareManager->getSharesBy($uid, IShare::TYPE_LINK, $node, false, -1);
+		foreach ($shares as $share) {
+			if (($share->getPermissions() & Constants::PERMISSION_READ) !== 0) {
+				return $share;
+			}
+		}
+
+		return null;
+	}
+
+	private function createViewOnlyPublicLinkShare(string $uid, Node $node): IShare {
+		$share = $this->shareManager->newShare();
+		$share->setNode($node)
+			->setShareType(IShare::TYPE_LINK)
+			->setSharedBy($uid)
+			->setShareOwner($this->getOwnerUid($node))
+			->setPermissions(Constants::PERMISSION_READ);
+
+		return $this->shareManager->createShare($share);
 	}
 
 	private function assertPublicVideoShareAccess(string $token, ?string $path = null): File {

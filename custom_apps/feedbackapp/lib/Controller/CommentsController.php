@@ -127,4 +127,17 @@ class CommentsController extends Controller {
 			], $exception->getStatusCode());
 		}
 	}
+
+	/**
+	 * @NoAdminRequired
+	 */
+	public function createPublicShareLink(int $fileId): DataResponse {
+		try {
+			return new DataResponse($this->commentService->createViewOnlyPublicShareLink($fileId));
+		} catch (FeedbackException $exception) {
+			return new DataResponse([
+				'message' => $exception->getMessage(),
+			], $exception->getStatusCode());
+		}
+	}
 }

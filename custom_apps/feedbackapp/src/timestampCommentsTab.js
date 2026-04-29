@@ -1,5 +1,5 @@
 import { registerSidebarTab } from '@nextcloud/files'
-import { createUrl, deleteCommentUrl, getFeedbackHeaders, isPublicShareContext, listUrl, publicShareAutoOpenUrl, updateCommentUrl, updateStatusUrl } from './shared/api.js'
+import { createUrl, deleteCommentUrl, getFeedbackHeaders, isPublicShareContext, listUrl, publicShareAutoOpenUrl, publicShareLinkUrl, updateCommentUrl, updateStatusUrl } from './shared/api.js'
 import { getActivePlaybackDurationSeconds, getActivePlaybackSeconds, getActiveSeekInput, getActiveVideoElement, getCurrentUserUid, isElementVisible, isVideoNode, seekActiveVideo } from './shared/dom.js'
 import { escapeHtml, formatCreatedAt, formatTimestamp, formatTimestampWithoutMilliseconds } from './shared/formatters.js'
 import { icons } from './shared/icons.js'
@@ -40,6 +40,9 @@ function setupTab() {
 			this._publicShareAutoOpen = false
 			this._canManagePublicShareAutoOpen = false
 			this._savingPublicShareAutoOpen = false
+			this._creatingPublicShareLink = false
+			this._publicShareLinkStatus = ''
+			this._publicShareLinkStatusTimer = null
 			this._filter = 'open'
 			this._selectedCommentId = null
 			this._timelineVideo = null
@@ -102,6 +105,11 @@ function setupTab() {
 			this.removeTimelineMarkers()
 			this._visibilityObserver?.disconnect()
 			this._visibilityObserver = null
+			if (this._publicShareLinkStatusTimer !== null) {
+				window.clearTimeout(this._publicShareLinkStatusTimer)
+				this._publicShareLinkStatusTimer = null
+				this._publicShareLinkStatus = ''
+			}
 			window.removeEventListener('resize', this._windowResizeHandler)
 		}
 
@@ -176,6 +184,72 @@ function setupTab() {
 				this._errorMessage = 'Failed to update public-share setting.'
 			} finally {
 				this._savingPublicShareAutoOpen = false
+				this.render()
+			}
+		}
+
+		async copyTextToClipboard(text) {
+			if (navigator.clipboard?.writeText) {
+				await navigator.clipboard.writeText(text)
+				return
+			}
+
+			const textarea = document.createElement('textarea')
+			textarea.value = text
+			textarea.setAttribute('readonly', 'readonly')
+			textarea.style.position = 'fixed'
+			textarea.style.left = '-9999px'
+			document.body.appendChild(textarea)
+			textarea.select()
+			const copied = document.execCommand('copy')
+			textarea.remove()
+			if (!copied) {
+				throw new Error('Clipboard copy failed')
+			}
+		}
+
+		async createPublicShareLink() {
+			if (!this.fileId || this._creatingPublicShareLink) {
+				return
+			}
+
+			this._creatingPublicShareLink = true
+			this._publicShareLinkStatus = ''
+			if (this._publicShareLinkStatusTimer !== null) {
+				window.clearTimeout(this._publicShareLinkStatusTimer)
+				this._publicShareLinkStatusTimer = null
+			}
+			this._errorMessage = ''
+			this.render()
+
+			try {
+				const response = await fetch(publicShareLinkUrl(this.fileId), {
+					method: 'POST',
+					headers: getFeedbackHeaders({ json: true }),
+					credentials: 'same-origin',
+					body: JSON.stringify({}),
+				})
+				const data = await response.json()
+
+				if (!response.ok || !data.url) {
+					this._errorMessage = data.message ?? 'Failed to create public share link.'
+				} else {
+					await this.copyTextToClipboard(data.url)
+					this._publicShareLinkStatus = 'Copied'
+					if (this._publicShareLinkStatusTimer !== null) {
+						window.clearTimeout(this._publicShareLinkStatusTimer)
+					}
+					this._publicShareLinkStatusTimer = window.setTimeout(() => {
+						this._publicShareLinkStatus = ''
+						this._publicShareLinkStatusTimer = null
+						this.render()
+					}, 3000)
+				}
+			} catch (error) {
+				console.error(error)
+				this._errorMessage = 'Failed to create or copy public share link.'
+			} finally {
+				this._creatingPublicShareLink = false
 				this.render()
 			}
 		}
@@ -657,6 +731,7 @@ function setupTab() {
 			const deleteButtons = this.querySelectorAll('[data-feedback-delete]')
 			const editMessageInput = this.querySelector('[data-feedback-edit-message]')
 			const publicShareToggle = this.querySelector('[data-feedback-public-share-auto-open]')
+			const publicShareLinkButton = this.querySelector('[data-feedback-create-public-share-link]')
 			const saveEditButtons = this.querySelectorAll('[data-feedback-save-edit]')
 			const cancelEditButtons = this.querySelectorAll('[data-feedback-cancel-edit]')
 			const jumpCards = this.querySelectorAll('[data-feedback-card]')
@@ -690,6 +765,11 @@ function setupTab() {
 
 			publicShareToggle?.addEventListener('change', (event) => {
 				void this.updatePublicShareAutoOpen(Boolean(event.target.checked))
+			})
+
+			publicShareLinkButton?.addEventListener('click', (event) => {
+				event.preventDefault()
+				void this.createPublicShareLink()
 			})
 
 			filterButtons.forEach((button) => {
@@ -837,6 +917,31 @@ function setupTab() {
 					}).join('')}</ul>`
 
 			const showPublicShareAutoOpenToggle = !isPublicShareContext() && this.fileId && this._canManagePublicShareAutoOpen
+			const shareButtonStyle = this._publicShareLinkStatus
+				? 'display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:8px 14px;border:1px solid var(--color-success);border-radius:10px;background:var(--color-success);color:var(--color-primary-element-text);cursor:pointer;font-weight:600;'
+				: 'display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:8px 14px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-main-background);color:var(--color-main-text);cursor:pointer;font-weight:600;'
+			const publicShareButton = showPublicShareAutoOpenToggle ? `
+				<button
+					data-feedback-create-public-share-link
+					type="button"
+					${this._creatingPublicShareLink ? 'disabled' : ''}
+					style="${shareButtonStyle}"
+				>
+					${icons.link}
+					<span>${this._creatingPublicShareLink ? 'Sharing...' : (this._publicShareLinkStatus || 'Share')}</span>
+				</button>
+			` : '<span></span>'
+			const publicShareToggle = showPublicShareAutoOpenToggle ? `
+				<label style="display:flex; align-items:center; gap:8px; color: var(--color-text-maxcontrast); font-size: 0.85rem;">
+					<input
+						data-feedback-public-share-auto-open
+						type="checkbox"
+						${this._publicShareAutoOpen ? 'checked' : ''}
+						${this._savingPublicShareAutoOpen ? 'disabled' : ''}
+					>
+					<span>Open feedbackpanel in public shares</span>
+				</label>
+			` : ''
 			this.innerHTML = `
 				<section style="padding: 16px;">
 					<div style="margin-bottom: 16px;">
@@ -853,19 +958,12 @@ function setupTab() {
 							<span style="font-size: 0.85rem; color: var(--color-text-maxcontrast);">Comment:</span>
 							<textarea data-feedback-message rows="3" style="width: 100%; resize: vertical;">${escapeHtml(this._newMessage)}</textarea>
 						</label>
-						<div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-							${showPublicShareAutoOpenToggle ? `
-								<label style="display:flex; align-items:center; gap:8px; color: var(--color-text-maxcontrast); font-size: 0.85rem;">
-									<input
-										data-feedback-public-share-auto-open
-										type="checkbox"
-										${this._publicShareAutoOpen ? 'checked' : ''}
-										${this._savingPublicShareAutoOpen ? 'disabled' : ''}
-									>
-									<span>Open feedbackpanel in public shares</span>
-								</label>
-							` : '<span></span>'}
-							<button type="submit" ${this._saving ? 'disabled' : ''} style="justify-self: end;">${this._saving ? 'Saving...' : 'Add feedback'}</button>
+						<div style="display:grid; gap:8px;">
+							<div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+								${publicShareButton}
+								<button type="submit" ${this._saving ? 'disabled' : ''} style="justify-self: end;">${this._saving ? 'Saving...' : 'Add feedback'}</button>
+							</div>
+							${publicShareToggle}
 						</div>
 					</form>
 					<div style="display: flex; gap: 8px; margin: 0 0 16px;">

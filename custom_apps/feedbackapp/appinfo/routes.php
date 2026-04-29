@@ -45,6 +45,11 @@ return [
 			'verb' => 'PUT',
 		],
 		[
+			'name' => 'comments#createPublicShareLink',
+			'url' => '/api/files/{fileId}/public-share-link',
+			'verb' => 'POST',
+		],
+		[
 			'name' => 'publicComments#list',
 			'url' => '/public/comments/{token}',
 			'verb' => 'GET',
