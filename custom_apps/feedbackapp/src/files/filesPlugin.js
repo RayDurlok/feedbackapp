@@ -107,6 +107,39 @@ function getActiveViewerRoot() {
 		?? null
 }
 
+function enableVideoClickToggle() {
+	const video = getActiveVideoElement()
+	const target = video?.closest('.plyr__video-wrapper') ?? video
+	if (!video || !target || target.dataset.feedbackClickToggle === 'true') {
+		return
+	}
+
+	target.dataset.feedbackClickToggle = 'true'
+	let lastToggleAt = 0
+	const togglePlayback = (event) => {
+		if (event.target.closest?.('.plyr__controls, .plyr__control, button, input, textarea, select, a')) {
+			return
+		}
+
+		const now = Date.now()
+		if (now - lastToggleAt < 350) {
+			return
+		}
+		lastToggleAt = now
+
+		event.preventDefault()
+		event.stopPropagation()
+		if (video.paused) {
+			void video.play()
+		} else {
+			video.pause()
+		}
+	}
+
+	target.addEventListener('pointerup', togglePlayback, true)
+	target.addEventListener('click', togglePlayback, true)
+}
+
 function getHeaderIconsMenu(header) {
 	return header?.querySelector('.icons-menu') ?? null
 }
@@ -268,6 +301,8 @@ function createViewerButton(header) {
 }
 
 async function syncFeedbackViewerButton() {
+	enableVideoClickToggle()
+
 	if (!await shouldShowViewerButton()) {
 		document.getElementById(feedbackButtonId)?.remove()
 		return

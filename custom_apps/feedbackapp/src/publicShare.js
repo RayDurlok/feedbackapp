@@ -72,6 +72,61 @@ function getPublicHeaderIconsMenu(header) {
 	return header?.querySelector('.icons-menu') ?? null
 }
 
+function applyPublicShareBrowserTheme() {
+	const themeColor = '#111111'
+	let themeMeta = document.querySelector('meta[name="theme-color"]')
+	if (!themeMeta) {
+		themeMeta = document.createElement('meta')
+		themeMeta.setAttribute('name', 'theme-color')
+		document.head.appendChild(themeMeta)
+	}
+	themeMeta.setAttribute('content', themeColor)
+
+	let statusMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')
+	if (!statusMeta) {
+		statusMeta = document.createElement('meta')
+		statusMeta.setAttribute('name', 'apple-mobile-web-app-status-bar-style')
+		document.head.appendChild(statusMeta)
+	}
+	statusMeta.setAttribute('content', 'black-translucent')
+
+	document.documentElement.style.setProperty('background-color', themeColor, 'important')
+	document.body?.style.setProperty('background-color', themeColor, 'important')
+}
+
+function enableVideoClickToggle() {
+	const video = document.querySelector('.plyr video, video')
+	const target = video?.closest('.plyr__video-wrapper') ?? video
+	if (!video || !target || target.dataset.feedbackClickToggle === 'true') {
+		return
+	}
+
+	target.dataset.feedbackClickToggle = 'true'
+	let lastToggleAt = 0
+	const togglePlayback = (event) => {
+		if (event.target.closest?.('.plyr__controls, .plyr__control, button, input, textarea, select, a, #feedbackapp-public-panel')) {
+			return
+		}
+
+		const now = Date.now()
+		if (now - lastToggleAt < 350) {
+			return
+		}
+		lastToggleAt = now
+
+		event.preventDefault()
+		event.stopPropagation()
+		if (video.paused) {
+			void video.play()
+		} else {
+			video.pause()
+		}
+	}
+
+	target.addEventListener('pointerup', togglePlayback, true)
+	target.addEventListener('click', togglePlayback, true)
+}
+
 const publicFeedbackState = {
 	panel: null,
 	content: null,
@@ -80,9 +135,24 @@ const publicFeedbackState = {
 	element: null,
 	host: null,
 	videoKey: null,
+	config: null,
+	configPromise: null,
 	hasAppliedInitialState: false,
 	isSyncing: false,
 	disabled: false,
+}
+
+const MOBILE_PANEL_BREAKPOINT = 760
+const OVERLAY_PANEL_BREAKPOINT = 1100
+const OVERLAY_PANEL_HEIGHT = 'min(32dvh, 340px)'
+const OVERLAY_PANEL_MIN_HEIGHT = 200
+const OVERLAY_PANEL_MAX_HEIGHT_OFFSET = 120
+
+function shouldOverlayPanel(width = 380) {
+	return window.matchMedia?.(`(max-width: ${MOBILE_PANEL_BREAKPOINT}px)`)?.matches
+		|| window.matchMedia?.('(hover: none) and (pointer: coarse)')?.matches
+		|| window.innerWidth <= MOBILE_PANEL_BREAKPOINT
+		|| window.innerWidth <= Math.max(OVERLAY_PANEL_BREAKPOINT, width + 720)
 }
 
 function getPanelToggleIconSvg() {
@@ -95,6 +165,7 @@ function getPanelToggleIconSvg() {
 }
 
 function applyPanelLayout(isOpen, width) {
+	const isOverlay = shouldOverlayPanel(width)
 	const main = document.querySelector('main#app-content-vue, main.app-content, main')
 	const video = document.querySelector('.plyr video, video')
 	const playerRoot = video?.closest('.plyr')
@@ -103,24 +174,47 @@ function applyPanelLayout(isOpen, width) {
 
 	if (main) {
 		main.style.transition = 'padding-right 180ms ease'
-		main.style.paddingRight = isOpen ? `${width}px` : '0'
+		main.style.paddingRight = isOpen && !isOverlay ? `${width}px` : '0'
 	}
 
 	layoutTargets.forEach((target) => {
 		target.style.transition = 'width 180ms ease, max-width 180ms ease, margin-right 180ms ease'
 		target.style.boxSizing = 'border-box'
-		target.style.maxWidth = isOpen ? `calc(100vw - ${width}px)` : ''
-		target.style.width = isOpen ? `calc(100vw - ${width}px)` : ''
-		target.style.marginRight = isOpen ? `${width}px` : ''
+		target.style.maxWidth = isOpen && !isOverlay ? `calc(100vw - ${width}px)` : ''
+		target.style.width = isOpen && !isOverlay ? `calc(100vw - ${width}px)` : ''
+		target.style.marginRight = isOpen && !isOverlay ? `${width}px` : ''
 	})
+}
+
+function applyPanelShellLayout(panel, host) {
+	const width = Number.parseInt(panel.dataset.expandedWidth || '380', 10)
+	const isOverlay = shouldOverlayPanel(width)
+	panel.style.position = isOverlay || host === document.body ? 'fixed' : 'absolute'
+	panel.style.top = isOverlay ? 'auto' : (host === document.body ? 'var(--header-height, 50px)' : '48px')
+	panel.style.left = isOverlay ? '0' : ''
+	panel.style.right = '0'
+	panel.style.bottom = '0'
+	panel.style.maxWidth = isOverlay ? '100vw' : 'min(38vw, 420px)'
+	panel.style.height = isOverlay ? (panel.dataset.overlayHeight ? `${panel.dataset.overlayHeight}px` : OVERLAY_PANEL_HEIGHT) : ''
+	panel.style.borderRadius = isOverlay ? '14px 14px 0 0' : '0'
+	panel.style.transition = isOverlay
+		? 'transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease'
+		: 'width 180ms ease, box-shadow 180ms ease, border-color 180ms ease'
 }
 
 function updatePanelState(panel, content, toggleButton, isOpen) {
 	const width = Number.parseInt(panel.dataset.expandedWidth || '380', 10)
+	const isOverlay = shouldOverlayPanel(width)
 	panel.dataset.open = isOpen ? 'true' : 'false'
-	panel.style.width = isOpen ? `${width}px` : '0'
-	panel.style.borderLeftColor = isOpen ? 'var(--color-border)' : 'transparent'
-	panel.style.boxShadow = isOpen ? '0 0 24px rgba(0, 0, 0, 0.18)' : 'none'
+	publicFeedbackState.element?.toggleAttribute('data-feedback-compact-public', isOverlay)
+	panel.style.width = isOverlay ? '100vw' : (isOpen ? `${width}px` : '0')
+	panel.style.height = isOverlay ? (panel.dataset.overlayHeight ? `${panel.dataset.overlayHeight}px` : OVERLAY_PANEL_HEIGHT) : ''
+	panel.style.transform = isOverlay && !isOpen ? 'translateY(calc(100% + 2px))' : 'translateY(0)'
+	panel.style.borderLeftColor = isOpen && !isOverlay ? 'var(--color-border)' : 'transparent'
+	panel.style.borderTopColor = isOpen && isOverlay ? 'var(--color-border)' : 'transparent'
+	panel.style.boxShadow = isOpen
+		? (isOverlay ? '0 -12px 28px rgba(0, 0, 0, 0.26)' : '0 0 24px rgba(0, 0, 0, 0.18)')
+		: 'none'
 	panel.style.pointerEvents = isOpen ? 'auto' : 'none'
 	content.style.opacity = isOpen ? '1' : '0'
 	content.style.pointerEvents = isOpen ? 'auto' : 'none'
@@ -128,7 +222,24 @@ function updatePanelState(panel, content, toggleButton, isOpen) {
 	toggleButton.title = isOpen ? 'Feedback einklappen' : 'Feedback ausklappen'
 	toggleButton.setAttribute('aria-label', isOpen ? 'Feedback einklappen' : 'Feedback ausklappen')
 	applyPanelLayout(isOpen, width)
-	window.dispatchEvent(new Event('resize'))
+	if (!isOverlay) {
+		window.dispatchEvent(new Event('resize'))
+	}
+}
+
+function getOverlayPanelHeightBounds() {
+	const viewportHeight = window.visualViewport?.height ?? window.innerHeight
+	return {
+		min: Math.min(OVERLAY_PANEL_MIN_HEIGHT, Math.max(160, viewportHeight - OVERLAY_PANEL_MAX_HEIGHT_OFFSET)),
+		max: Math.max(OVERLAY_PANEL_MIN_HEIGHT, viewportHeight - OVERLAY_PANEL_MAX_HEIGHT_OFFSET),
+	}
+}
+
+function setOverlayPanelHeight(panel, height) {
+	const { min, max } = getOverlayPanelHeightBounds()
+	const nextHeight = Math.min(max, Math.max(min, height))
+	panel.dataset.overlayHeight = String(Math.round(nextHeight))
+	panel.style.height = `${Math.round(nextHeight)}px`
 }
 
 async function fetchPublicConfig() {
@@ -155,6 +266,25 @@ async function fetchPublicConfig() {
 	}
 }
 
+async function getPublicConfig() {
+	if (publicFeedbackState.config) {
+		return publicFeedbackState.config
+	}
+
+	if (!publicFeedbackState.configPromise) {
+		publicFeedbackState.configPromise = fetchPublicConfig()
+			.then((config) => {
+				publicFeedbackState.config = config
+				return config
+			})
+			.finally(() => {
+				publicFeedbackState.configPromise = null
+			})
+	}
+
+	return publicFeedbackState.configPromise
+}
+
 function syncPublicFeedbackPanel(panel, panelTitle, element) {
 	const nextKey = getCurrentPublicVideoKey()
 	if (!nextKey || panel.dataset.videoKey === nextKey) {
@@ -174,6 +304,8 @@ async function mountPublicFeedbackPanel() {
 		return
 	}
 
+	applyPublicShareBrowserTheme()
+
 	const ensureMounted = async () => {
 		if (publicFeedbackState.isSyncing || publicFeedbackState.disabled) {
 			return
@@ -182,10 +314,11 @@ async function mountPublicFeedbackPanel() {
 		if (!document.querySelector('.plyr__video-wrapper')) {
 			return
 		}
+		enableVideoClickToggle()
 
 		publicFeedbackState.isSyncing = true
 		try {
-		const config = await fetchPublicConfig()
+		const config = await getPublicConfig()
 		if (!config.enabled) {
 			publicFeedbackState.disabled = true
 			return
@@ -209,6 +342,7 @@ async function mountPublicFeedbackPanel() {
 			panel.style.background = 'var(--color-main-background)'
 			panel.style.borderLeft = '1px solid var(--color-border)'
 			panel.style.borderLeftColor = 'transparent'
+			panel.style.borderTop = '1px solid transparent'
 			panel.style.boxSizing = 'border-box'
 			panel.style.overflow = 'hidden'
 			panel.style.zIndex = '2147483646'
@@ -228,7 +362,7 @@ async function mountPublicFeedbackPanel() {
 			const panelHeader = document.createElement('div')
 			panelHeader.style.display = 'flex'
 			panelHeader.style.alignItems = 'center'
-			panelHeader.style.justifyContent = 'space-between'
+			panelHeader.style.justifyContent = 'flex-end'
 			panelHeader.style.gap = '12px'
 			panelHeader.style.padding = '12px 16px'
 			panelHeader.style.borderBottom = '1px solid var(--color-border)'
@@ -239,6 +373,7 @@ async function mountPublicFeedbackPanel() {
 			panelTitle.style.fontSize = '14px'
 			panelTitle.style.fontWeight = '700'
 			panelTitle.style.color = 'var(--color-main-text)'
+			panelTitle.style.display = 'none'
 
 			const collapseButton = document.createElement('button')
 			collapseButton.type = 'button'
@@ -265,12 +400,77 @@ async function mountPublicFeedbackPanel() {
 			panelBody.style.minHeight = '0'
 			panelBody.style.overflow = 'auto'
 
+			const resizeHandle = document.createElement('button')
+			resizeHandle.type = 'button'
+			resizeHandle.title = 'Feedbackpanel height'
+			resizeHandle.setAttribute('aria-label', 'Feedbackpanel height')
+			resizeHandle.innerHTML = '<span aria-hidden="true">=</span>'
+			resizeHandle.style.display = 'none'
+			resizeHandle.style.position = 'absolute'
+			resizeHandle.style.top = '0'
+			resizeHandle.style.left = '50%'
+			resizeHandle.style.transform = 'translate(-50%, calc(-50% + 1px))'
+			resizeHandle.style.zIndex = '1'
+			resizeHandle.style.alignItems = 'center'
+			resizeHandle.style.justifyContent = 'center'
+			resizeHandle.style.width = '64px'
+			resizeHandle.style.height = '24px'
+			resizeHandle.style.padding = '0'
+			resizeHandle.style.border = '0'
+			resizeHandle.style.borderRadius = '0 0 8px 8px'
+			resizeHandle.style.background = 'transparent'
+			resizeHandle.style.color = 'var(--color-text-maxcontrast)'
+			resizeHandle.style.cursor = 'ns-resize'
+			resizeHandle.style.fontSize = '17px'
+			resizeHandle.style.fontWeight = '700'
+			resizeHandle.style.lineHeight = '1'
+			resizeHandle.style.touchAction = 'none'
+			resizeHandle.style.userSelect = 'none'
+
 			const element = document.createElement('feedbackapp-timestamp-comments-tab')
 			element.style.display = 'block'
 			element.style.minHeight = '100%'
+			element.addEventListener('feedbackapp-close-public-panel', () => {
+				updatePanelState(panel, content, toggleButton, false)
+			})
+			resizeHandle.addEventListener('pointerdown', (event) => {
+				if (!shouldOverlayPanel()) {
+					return
+				}
+
+				event.preventDefault()
+				event.stopPropagation()
+				resizeHandle.setPointerCapture?.(event.pointerId)
+				const startY = event.clientY
+				const startHeight = panel.getBoundingClientRect().height
+
+				const onMove = (moveEvent) => {
+					moveEvent.preventDefault()
+					moveEvent.stopPropagation()
+					const nextHeight = startHeight + startY - moveEvent.clientY
+					if (nextHeight < getOverlayPanelHeightBounds().min - 40) {
+						updatePanelState(panel, content, toggleButton, false)
+						onEnd(moveEvent)
+						return
+					}
+
+					setOverlayPanelHeight(panel, nextHeight)
+				}
+				const onEnd = (endEvent) => {
+					endEvent?.stopPropagation?.()
+					resizeHandle.releasePointerCapture?.(event.pointerId)
+					window.removeEventListener('pointermove', onMove, true)
+					window.removeEventListener('pointerup', onEnd, true)
+					window.removeEventListener('pointercancel', onEnd, true)
+				}
+
+				window.addEventListener('pointermove', onMove, true)
+				window.addEventListener('pointerup', onEnd, true)
+				window.addEventListener('pointercancel', onEnd, true)
+			})
 			panelBody.appendChild(element)
-			content.appendChild(panelHeader)
 			content.appendChild(panelBody)
+			panel.appendChild(resizeHandle)
 			panel.appendChild(content)
 
 			const toggleButton = document.createElement('button')
@@ -299,20 +499,23 @@ async function mountPublicFeedbackPanel() {
 				swallowEvent(event)
 				updatePanelState(panel, content, toggleButton, panel.dataset.open !== 'true')
 			})
-			collapseButton.addEventListener('click', () => {
+			collapseButton.addEventListener('pointerdown', swallowEvent)
+			collapseButton.addEventListener('mousedown', swallowEvent)
+			collapseButton.addEventListener('click', (event) => {
+				swallowEvent(event)
 				updatePanelState(panel, content, toggleButton, false)
 			})
-
 			publicFeedbackState.panel = panel
 			publicFeedbackState.content = content
 			publicFeedbackState.toggleButton = toggleButton
 			publicFeedbackState.panelTitle = panelTitle
 			publicFeedbackState.element = element
+			publicFeedbackState.resizeHandle = resizeHandle
 		}
 
 		const { panel, content, toggleButton, panelTitle, element } = publicFeedbackState
-		panel.style.position = host === document.body ? 'fixed' : 'absolute'
-		panel.style.top = host === document.body ? 'var(--header-height, 50px)' : '48px'
+		applyPanelShellLayout(panel, host)
+		publicFeedbackState.resizeHandle.style.display = shouldOverlayPanel() ? 'inline-flex' : 'none'
 
 		if (panel.parentElement !== host) {
 			host.appendChild(panel)
@@ -347,7 +550,10 @@ async function mountPublicFeedbackPanel() {
 		if (!publicFeedbackState.hasAppliedInitialState) {
 			updatePanelState(panel, content, toggleButton, config.autoOpenSidebar)
 			publicFeedbackState.hasAppliedInitialState = true
+		} else if (publicFeedbackState.layoutMode !== (shouldOverlayPanel() ? 'overlay' : 'desktop')) {
+			updatePanelState(panel, content, toggleButton, panel.dataset.open === 'true')
 		}
+		publicFeedbackState.layoutMode = shouldOverlayPanel() ? 'overlay' : 'desktop'
 	} finally {
 		publicFeedbackState.isSyncing = false
 	}

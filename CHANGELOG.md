@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.16 - 2026-05-07
+
+### Added
+
+- Mobile-friendly public-share feedback panel using a compact bottom-sheet layout
+- Drag handle for resizing the mobile feedback panel
+- Tap-to-play/pause behavior for video playback on mobile and desktop viewer pages
+
+### Changed
+
+- Public-share feedback panel avoids shifting the video on narrow and touch viewports
+- Public-share mobile panel uses a compact comment form with reduced vertical spacing
+- Public-share browser theme color is darkened to avoid Nextcloud blue around the mobile keyboard
+- Public-share config is cached client-side instead of being fetched repeatedly while the panel is mounted
+
 ## 0.2.0 - 2026-04-29
 
 ### Added

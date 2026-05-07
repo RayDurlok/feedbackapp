@@ -23,7 +23,7 @@ Current tested baseline:
 - Nextcloud `33`
 - local Docker test instance
 - manual deployment through `custom_apps/feedbackapp`
-- current release: `0.2.0`
+- current release: `0.2.16`
 
 ## Features
 
@@ -37,6 +37,7 @@ Current tested baseline:
 - Public-share feedback panel for guest reviewers
 - Guest comment edit/delete for the same browser identity
 - Feedback Panel quick-access button in the video viewer
+- Mobile-friendly public-share feedback panel with a resizable bottom sheet
 - One-click view-only public share link creation from the Feedback sidebar
 - Per-video public-share panel auto-open toggle
 - Clickable URLs in feedback comments

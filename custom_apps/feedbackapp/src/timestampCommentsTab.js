@@ -755,6 +755,7 @@ function setupTab() {
 			const editMessageInput = this.querySelector('[data-feedback-edit-message]')
 			const publicShareToggle = this.querySelector('[data-feedback-public-share-auto-open]')
 			const publicShareLinkButton = this.querySelector('[data-feedback-create-public-share-link]')
+			const publicPanelCloseButton = this.querySelector('[data-feedback-close-public-panel]')
 			const saveEditButtons = this.querySelectorAll('[data-feedback-save-edit]')
 			const cancelEditButtons = this.querySelectorAll('[data-feedback-cancel-edit]')
 			const jumpCards = this.querySelectorAll('[data-feedback-card]')
@@ -793,6 +794,15 @@ function setupTab() {
 			publicShareLinkButton?.addEventListener('click', (event) => {
 				event.preventDefault()
 				void this.createPublicShareLink()
+			})
+
+			publicPanelCloseButton?.addEventListener('click', (event) => {
+				event.preventDefault()
+				event.stopPropagation()
+				this.dispatchEvent(new CustomEvent('feedbackapp-close-public-panel', {
+					bubbles: true,
+					composed: true,
+				}))
 			})
 
 			filterButtons.forEach((button) => {
@@ -858,6 +868,7 @@ function setupTab() {
 		}
 
 		render() {
+			const compactPublic = isPublicShareContext() && this.hasAttribute('data-feedback-compact-public')
 			const error = this._errorMessage
 				? `<p style="margin: 0 0 12px; color: var(--color-error-text); line-height: 1.4;">${escapeHtml(this._errorMessage)}</p>`
 				: ''
@@ -965,19 +976,36 @@ function setupTab() {
 					<span>Open feedbackpanel in public shares</span>
 				</label>
 			` : ''
+			const header = isPublicShareContext()
+				? ''
+				: `<div style="margin-bottom: 16px;">
+					<h2 style="margin: 0 0 4px; font-size: 1rem;">Feedback</h2>
+					<p style="margin: 0; line-height: 1.4; color: var(--color-text-maxcontrast);">${escapeHtml(this.fileName)}</p>
+				</div>`
+			const closeButton = compactPublic
+				? `<span style="display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;">
+					<button
+						data-feedback-close-public-panel
+						type="button"
+						title="Feedback einklappen"
+						aria-label="Feedback einklappen"
+						style="position:absolute;top:10px;right:12px;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:1px solid var(--color-border);border-radius:8px;background:var(--color-main-background);color:var(--color-main-text);cursor:pointer;"
+					>${icons.cancel}</button>
+				</span>`
+				: ''
 			this.innerHTML = `
-				<section style="padding: 16px;">
-					<div style="margin-bottom: 16px;">
-						<h2 style="margin: 0 0 4px; font-size: 1rem;">Feedback</h2>
-						<p style="margin: 0; line-height: 1.4; color: var(--color-text-maxcontrast);">${escapeHtml(this.fileName)}</p>
-					</div>
+				<section style="position:relative;padding: ${compactPublic ? '16px 16px 16px' : '16px'};">
+					${header}
 					${error}
-					<form data-feedback-form style="display: grid; gap: 8px; margin: 0 0 16px;">
-						<p style="margin: 0; font-size: 0.85rem; color: var(--color-text-maxcontrast); line-height: 1.4;">
-							Your comment will be saved at this time of the video:
-							<strong data-feedback-current-playhead>${formatTimestampWithoutMilliseconds(0)}</strong>
-						</p>
-						<label style="display: grid; gap: 4px;">
+					<form data-feedback-form style="display: grid; gap: ${compactPublic ? '1px' : '4px'}; margin: 0 0 12px;">
+						<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding-right:${compactPublic ? '34px' : '0'};">
+							<p style="margin: 0; font-size: 0.85rem; color: var(--color-text-maxcontrast); line-height: 1.15;">
+								Your comment will be saved at:
+								<strong data-feedback-current-playhead>${formatTimestampWithoutMilliseconds(0)}</strong>
+							</p>
+							${closeButton}
+						</div>
+						<label style="display: grid; gap: 1px;">
 							<span style="font-size: 0.85rem; color: var(--color-text-maxcontrast);">Comment:</span>
 							<textarea data-feedback-message rows="3" style="width: 100%; resize: vertical;">${escapeHtml(this._newMessage)}</textarea>
 						</label>
