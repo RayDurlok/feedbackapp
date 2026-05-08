@@ -217,6 +217,7 @@ function createSidebarNode(fileInfo, FileClass) {
 		displayname: fileInfo.basename,
 		attributes: {
 			fileid: fileInfo.fileid,
+			displayname: fileInfo.basename,
 			mime: fileInfo.mime,
 			mimetype: fileInfo.mimetype,
 		},
@@ -246,11 +247,23 @@ function focusFeedbackTabSoon() {
 	}, 100)
 }
 
+function getVisibleSidebarElement() {
+	return [...document.querySelectorAll('#app-sidebar-vue, aside[id^="app-sidebar"], .app-sidebar')]
+		.find((sidebar) => isVisibleElement(sidebar)) ?? null
+}
+
 async function openFeedbackSidebar(header) {
 	const filesApi = await loadFilesApi()
+	const sidebar = filesApi?.getSidebar?.()
+
+	if (sidebar?.isOpen || getVisibleSidebarElement()) {
+		sidebar?.setActiveTab?.(feedbackTabId)
+		focusFeedbackTabSoon()
+		return
+	}
+
 	const fileInfo = await fetchActiveVideoFileInfo()
 	const node = createSidebarNode(fileInfo, filesApi?.File)
-	const sidebar = filesApi?.getSidebar?.()
 	if (node && sidebar?.available) {
 		sidebar.open(node, feedbackTabId)
 		sidebar.setActiveTab(feedbackTabId)

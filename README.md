@@ -23,7 +23,7 @@ Current tested baseline:
 - Nextcloud `33`
 - local Docker test instance
 - manual deployment through `custom_apps/feedbackapp`
-- current release: `0.2.17`
+- current release: `0.2.18`
 
 ## Features
 

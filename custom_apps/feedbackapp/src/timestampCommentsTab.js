@@ -41,6 +41,19 @@ function renderLinkedText(value) {
 	return html
 }
 
+function decodeFileName(value) {
+	const fileName = String(value ?? '').trim()
+	if (fileName === '') {
+		return null
+	}
+
+	try {
+		return decodeURIComponent(fileName)
+	} catch {
+		return fileName
+	}
+}
+
 function setupTab() {
 	if (window.customElements.get(tagName)) {
 		return
@@ -100,7 +113,9 @@ function setupTab() {
 		}
 
 		get fileId() {
-			return this._node?.fileid ?? null
+			return this._node?.fileid
+				?? this._node?.attributes?.fileid
+				?? null
 		}
 
 		get fileName() {
@@ -108,7 +123,10 @@ function setupTab() {
 				return this.getAttribute('data-feedback-public-title') ?? 'Shared video'
 			}
 
-			return this._node?.basename ?? 'Current file'
+			return decodeFileName(this._node?.displayname)
+				?? decodeFileName(this._node?.attributes?.displayname)
+				?? decodeFileName(this._node?.basename)
+				?? 'Current file'
 		}
 
 		connectedCallback() {

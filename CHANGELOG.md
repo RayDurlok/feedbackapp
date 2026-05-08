@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.18 - 2026-05-08
+
+### Fixed
+
+- Decode logged-in viewer file names before showing them in the Feedback sidebar
+- Keep the Feedback sidebar bound to the active file after reopening from the viewer quick-access button
+
 ## 0.2.17 - 2026-05-08
 
 ### Changed
