@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.17 - 2026-05-08
+
+### Changed
+
+- Hardened the logged-in video viewer Feedback Panel button against viewer overlay click interception
+
 ## 0.2.16 - 2026-05-07
 
 ### Added

@@ -263,6 +263,57 @@ async function openFeedbackSidebar(header) {
 	focusFeedbackTabSoon()
 }
 
+function isVisibleElement(element) {
+	if (!element) {
+		return false
+	}
+
+	const rect = element.getBoundingClientRect()
+	const style = window.getComputedStyle(element)
+	return rect.width > 0
+		&& rect.height > 0
+		&& style.display !== 'none'
+		&& style.visibility !== 'hidden'
+		&& style.pointerEvents !== 'none'
+}
+
+function isEventInsideViewerButton(event) {
+	if (!isLoggedInFilesViewer()) {
+		return false
+	}
+
+	const button = document.getElementById(feedbackButtonId)
+	if (!isVisibleElement(button) || typeof event.clientX !== 'number' || typeof event.clientY !== 'number') {
+		return false
+	}
+
+	const rect = button.getBoundingClientRect()
+	return event.clientX >= rect.left
+		&& event.clientX <= rect.right
+		&& event.clientY >= rect.top
+		&& event.clientY <= rect.bottom
+}
+
+let lastViewerButtonActivationAt = 0
+
+function activateViewerButtonFromEvent(event) {
+	if (!isEventInsideViewerButton(event)) {
+		return false
+	}
+
+	event.preventDefault()
+	event.stopPropagation()
+	event.stopImmediatePropagation?.()
+
+	const now = Date.now()
+	if (now - lastViewerButtonActivationAt > 350) {
+		lastViewerButtonActivationAt = now
+		void openFeedbackSidebar(getActiveViewerHeader())
+	}
+
+	return true
+}
+
 function createViewerButton(header) {
 	const button = document.createElement('button')
 	button.id = feedbackButtonId
@@ -290,12 +341,15 @@ function createViewerButton(header) {
 		event.stopPropagation()
 	}
 
-	button.addEventListener('pointerdown', swallowEvent)
-	button.addEventListener('mousedown', swallowEvent)
-	button.addEventListener('click', (event) => {
+	button.addEventListener('pointerdown', (event) => {
 		swallowEvent(event)
-		void openFeedbackSidebar(header)
 	})
+	button.addEventListener('mousedown', swallowEvent)
+	button.addEventListener('pointerup', (event) => {
+		swallowEvent(event)
+		activateViewerButtonFromEvent(event)
+	})
+	button.addEventListener('click', swallowEvent)
 
 	return button
 }
@@ -346,6 +400,26 @@ async function syncFeedbackViewerButton() {
 window.setInterval(() => {
 	void syncFeedbackViewerButton()
 }, 700)
+
+document.addEventListener('pointerdown', (event) => {
+	if (isEventInsideViewerButton(event)) {
+		event.preventDefault()
+		event.stopPropagation()
+		event.stopImmediatePropagation?.()
+	}
+}, true)
+
+document.addEventListener('mousedown', (event) => {
+	if (isEventInsideViewerButton(event)) {
+		event.preventDefault()
+		event.stopPropagation()
+		event.stopImmediatePropagation?.()
+	}
+}, true)
+
+document.addEventListener('pointerup', (event) => {
+	activateViewerButtonFromEvent(event)
+}, true)
 
 void syncFeedbackViewerButton()
 
