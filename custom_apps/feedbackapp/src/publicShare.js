@@ -1,4 +1,5 @@
 import { getFeedbackHeaders, getPublicShareFilePath, publicConfigUrl } from './shared/api.js'
+import { getActiveVideoElement } from './shared/dom.js'
 
 function isPublicSharePage() {
 	return /\/s\/[^/]+/.test(window.location.pathname) && !document.head?.dataset?.user
@@ -6,7 +7,7 @@ function isPublicSharePage() {
 
 function getPublicVideoTitle() {
 	return getPublicShareFilePath()?.split('/').pop()
-		|| document.querySelector('video')?.getAttribute('src')?.split('/').pop()
+		|| getActiveVideoElement()?.getAttribute('src')?.split('/').pop()
 		|| document.querySelector('button[aria-label="Ansicht"]')?.textContent?.trim()
 		|| document.title
 		|| 'Shared video'
@@ -17,7 +18,7 @@ function getCurrentPublicVideoKey() {
 }
 
 function getPublicViewerHost() {
-	const video = document.querySelector('.plyr video, video')
+	const video = getActiveVideoElement()
 	if (!video) {
 		return document.body
 	}
@@ -95,7 +96,7 @@ function applyPublicShareBrowserTheme() {
 }
 
 function enableVideoClickToggle() {
-	const video = document.querySelector('.plyr video, video')
+	const video = getActiveVideoElement()
 	const target = video?.closest('.plyr__video-wrapper') ?? video
 	if (!video || !target || target.dataset.feedbackClickToggle === 'true') {
 		return
@@ -167,7 +168,7 @@ function getPanelToggleIconSvg() {
 function applyPanelLayout(isOpen, width) {
 	const isOverlay = shouldOverlayPanel(width)
 	const main = document.querySelector('main#app-content-vue, main.app-content, main')
-	const video = document.querySelector('.plyr video, video')
+	const video = getActiveVideoElement()
 	const playerRoot = video?.closest('.plyr')
 	const videoWrapper = video?.closest('.plyr__video-wrapper')
 	const layoutTargets = [playerRoot, videoWrapper].filter(Boolean)

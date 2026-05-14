@@ -34,6 +34,8 @@ class SendFeedbackNotificationJob extends QueuedJob {
 			(string)($argument['ownerUid'] ?? ''),
 			(string)($argument['actorUid'] ?? ''),
 			(string)($argument['actorDisplayName'] ?? ''),
+			(string)($argument['message'] ?? ''),
+			(bool)($argument['spamProtection'] ?? true),
 		);
 	}
 }

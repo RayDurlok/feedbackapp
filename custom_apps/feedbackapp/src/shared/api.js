@@ -1,3 +1,5 @@
+import { getActiveVideoElement } from './dom.js'
+
 export function getPublicShareToken() {
 	const match = window.location.pathname.match(/\/s\/([^/]+)/)
 	return match?.[1] ? decodeURIComponent(match[1]) : null
@@ -8,7 +10,7 @@ export function isPublicShareContext() {
 }
 
 function getActivePublicVideoElement() {
-	return document.querySelector('.plyr video, video')
+	return getActiveVideoElement()
 }
 
 export function getPublicShareFilePath() {

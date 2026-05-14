@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace OCA\FeedbackApp\Service;
 
-use OCA\FeedbackApp\BackgroundJob\SendFeedbackNotificationJob;
 use OCA\FeedbackApp\Exception\FeedbackException;
 use OCP\Constants;
-use OCP\BackgroundJob\IJobList;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
@@ -33,7 +31,7 @@ class CommentService {
 		private ShareManager $shareManager,
 		private IURLGenerator $urlGenerator,
 		private FeedbackNotificationService $feedbackNotificationService,
-		private IJobList $jobList,
+		private SettingsService $settingsService,
 	) {
 	}
 
@@ -140,6 +138,7 @@ class CommentService {
 			$this->getOwnerUid($node),
 			$user->getUID(),
 			$this->resolveDisplayName($user->getUID()),
+			$message,
 		);
 
 		return [
@@ -217,6 +216,7 @@ class CommentService {
 			$this->getOwnerUid($file),
 			self::PUBLIC_AUTHOR_UID,
 			self::PUBLIC_AUTHOR_DISPLAY_NAME,
+			$message,
 		);
 
 		return [
@@ -519,17 +519,23 @@ class CommentService {
 		return $owner->getUID();
 	}
 
-	private function queueOwnerNotification(int $fileId, string $fileName, string $ownerUid, string $actorUid, string $actorDisplayName): void {
+	private function queueOwnerNotification(int $fileId, string $fileName, string $ownerUid, string $actorUid, string $actorDisplayName, string $message): void {
 		if ($ownerUid === '' || $ownerUid === $actorUid) {
 			return;
 		}
 
-		$this->jobList->add(SendFeedbackNotificationJob::class, [
-			'fileId' => $fileId,
-			'fileName' => $fileName,
-			'ownerUid' => $ownerUid,
-			'actorUid' => $actorUid,
-			'actorDisplayName' => $actorDisplayName,
-		]);
+		try {
+			$this->feedbackNotificationService->notifyFileOwner(
+				$fileId,
+				$fileName,
+				$ownerUid,
+				$actorUid,
+				$actorDisplayName,
+				$message,
+				$this->settingsService->getUserNotificationSpamProtection($ownerUid),
+			);
+		} catch (\Throwable) {
+			// Feedback must still be saved if notification delivery is temporarily unavailable.
+		}
 	}
 }

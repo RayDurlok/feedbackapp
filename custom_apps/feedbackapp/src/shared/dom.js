@@ -1,5 +1,18 @@
 export function isElementVisible(element) {
-	return Boolean(element) && element.getClientRects().length > 0
+	if (!element || element.getClientRects().length === 0) {
+		return false
+	}
+
+	if (element.closest('[hidden], [aria-hidden="true"], [inert], .viewer__file-wrapper--hidden')) {
+		return false
+	}
+
+	const rect = element.getBoundingClientRect()
+	const style = window.getComputedStyle(element)
+	return rect.width > 0
+		&& rect.height > 0
+		&& style.display !== 'none'
+		&& style.visibility !== 'hidden'
 }
 
 function getElementArea(element) {

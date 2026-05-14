@@ -24,6 +24,7 @@ class Personal implements ISettings {
 		return new TemplateResponse(Application::APP_ID, 'settings/personal', [
 			'autoOpenPublicShareSidebar' => $this->settingsService->getUserPublicShareAutoOpen($uid),
 			'showVideoViewerQuickAccess' => $this->settingsService->getUserVideoViewerQuickAccess($uid),
+			'notificationSpamProtection' => $this->settingsService->getUserNotificationSpamProtection($uid),
 		]);
 	}
 

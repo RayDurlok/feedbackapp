@@ -25,6 +25,12 @@ $requestToken = (string) ($_['requesttoken'] ?? \OC::$server->getCsrfTokenManage
 			</label>
 		</p>
 		<p>
+			<label>
+				<input type="checkbox" name="notificationSpamProtection" value="1" <?php if (!array_key_exists('notificationSpamProtection', $_) || !empty($_['notificationSpamProtection'])) { print_unescaped('checked'); } ?>>
+				Limit feedback notifications to one open notification per video
+			</label>
+		</p>
+		<p>
 			<button class="button-primary" type="submit">Save</button>
 		</p>
 	</form>

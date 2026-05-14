@@ -46,7 +46,7 @@ class SettingsController extends Controller {
 	/**
 	 * @NoAdminRequired
 	 */
-	public function updatePersonal(bool $autoOpenPublicShareSidebar = false, bool $showVideoViewerQuickAccess = false): RedirectResponse {
+	public function updatePersonal(bool $autoOpenPublicShareSidebar = false, bool $showVideoViewerQuickAccess = false, bool $notificationSpamProtection = false): RedirectResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			throw new FeedbackException('User not logged in', 401);
@@ -54,6 +54,7 @@ class SettingsController extends Controller {
 
 		$this->settingsService->setUserPublicShareAutoOpen($user->getUID(), $autoOpenPublicShareSidebar);
 		$this->settingsService->setUserVideoViewerQuickAccess($user->getUID(), $showVideoViewerQuickAccess);
+		$this->settingsService->setUserNotificationSpamProtection($user->getUID(), $notificationSpamProtection);
 
 		return new RedirectResponse($this->getSettingsReferer('settings.PersonalSettings.index'));
 	}

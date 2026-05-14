@@ -43,6 +43,7 @@ class Notifier implements INotifier {
 				$fileName = (string)($params['fileName'] ?? 'video');
 				$actorUid = (string)($params['actorUid'] ?? '');
 				$actorDisplayName = trim((string)($params['actorDisplayName'] ?? ''));
+				$message = trim((string)($params['message'] ?? ''));
 				$link = (string)($params['link'] ?? '');
 
 				$actor = $this->userManager->get($actorUid);
@@ -50,9 +51,16 @@ class Notifier implements INotifier {
 					? $actorDisplayName
 					: ($actor instanceof IUser ? $actor->getDisplayName() : $actorUid);
 
+				$preview = $message !== '' && mb_strlen($message) > 180
+					? mb_substr($message, 0, 177) . '...'
+					: $message;
+				$parsedMessage = $preview !== ''
+					? $l->t('%1$s added feedback: "%2$s"', [$actorName, $preview])
+					: $l->t('%s added feedback', [$actorName]);
+
 				$notification
 					->setParsedSubject($l->t('New feedback on %s', [$fileName]))
-					->setParsedMessage($l->t('%1$s added feedback to %2$s', [$actorName, $fileName]))
+					->setParsedMessage($parsedMessage)
 					->setLink($link)
 					->setIcon(
 						$this->urlGenerator->getAbsoluteURL(

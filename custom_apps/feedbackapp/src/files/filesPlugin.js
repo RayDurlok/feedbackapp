@@ -9,6 +9,8 @@ const feedbackTabSelectors = [
 let viewerButtonEnabled = null
 let viewerButtonConfigPromise = null
 let filesApiPromise = null
+let hasConsumedNotificationOpen = false
+let pendingNotificationFeedbackOpenUntil = 0
 
 async function loadFilesApi() {
 	if (!filesApiPromise) {
@@ -64,6 +66,57 @@ function getActiveVideoElement() {
 			&& rect.width > 0
 			&& rect.height > 0
 	}) ?? null
+}
+
+function shouldOpenFeedbackFromNotificationUrl() {
+	if (hasConsumedNotificationOpen) {
+		return false
+	}
+
+	const params = new URLSearchParams(window.location.search)
+	const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+	const value = params.get('feedbackapp')
+		?? params.get('feedbackpanel')
+		?? hashParams.get('feedbackapp')
+		?? hashParams.get('feedbackpanel')
+	if (value === '1' || value === 'open' || value === 'true') {
+		return true
+	}
+
+	return /^\/apps\/files\/files\/\d+/.test(window.location.pathname)
+		&& params.get('openfile') === 'true'
+		&& params.get('opendetails') === 'true'
+}
+
+function consumeNotificationOpenParam() {
+	hasConsumedNotificationOpen = true
+
+	try {
+		const url = new URL(window.location.href)
+		url.searchParams.delete('feedbackapp')
+		url.searchParams.delete('feedbackpanel')
+		const hashParams = new URLSearchParams(url.hash.replace(/^#/, ''))
+		hashParams.delete('feedbackapp')
+		hashParams.delete('feedbackpanel')
+		const nextHash = hashParams.toString()
+		url.hash = nextHash ? `#${nextHash}` : ''
+		window.history.replaceState(window.history.state, '', url.toString())
+	} catch {
+		// Non-critical: the parameter is only used to avoid reopening the panel.
+	}
+}
+
+function startNotificationFeedbackOpen() {
+	consumeNotificationOpenParam()
+	pendingNotificationFeedbackOpenUntil = Date.now() + 15000
+}
+
+function hasPendingNotificationFeedbackOpen() {
+	return pendingNotificationFeedbackOpenUntil > Date.now()
+}
+
+function stopNotificationFeedbackOpen() {
+	pendingNotificationFeedbackOpenUntil = 0
 }
 
 function getActiveViewerHeader() {
@@ -228,6 +281,11 @@ function focusFeedbackTab() {
 	const tab = feedbackTabSelectors
 		.map((selector) => document.querySelector(selector))
 		.find(Boolean)
+		?? [...document.querySelectorAll('#app-sidebar-vue button, #app-sidebar-vue a, #app-sidebar-vue [role="tab"], .app-sidebar button, .app-sidebar a, .app-sidebar [role="tab"]')]
+			.find((candidate) => {
+				const text = candidate.textContent?.trim().replace(/\s+/g, ' ') ?? ''
+				return isVisibleElement(candidate) && text === 'Feedback'
+			})
 
 	if (tab) {
 		tab.click()
@@ -309,6 +367,14 @@ function isEventInsideViewerButton(event) {
 
 let lastViewerButtonActivationAt = 0
 
+function activateViewerButton() {
+	const now = Date.now()
+	if (now - lastViewerButtonActivationAt > 350) {
+		lastViewerButtonActivationAt = now
+		void openFeedbackSidebar(getActiveViewerHeader())
+	}
+}
+
 function activateViewerButtonFromEvent(event) {
 	if (!isEventInsideViewerButton(event)) {
 		return false
@@ -318,11 +384,7 @@ function activateViewerButtonFromEvent(event) {
 	event.stopPropagation()
 	event.stopImmediatePropagation?.()
 
-	const now = Date.now()
-	if (now - lastViewerButtonActivationAt > 350) {
-		lastViewerButtonActivationAt = now
-		void openFeedbackSidebar(getActiveViewerHeader())
-	}
+	activateViewerButton()
 
 	return true
 }
@@ -407,6 +469,24 @@ async function syncFeedbackViewerButton() {
 		button.style.top = '10px'
 		button.style.right = '58px'
 		button.style.marginRight = ''
+	}
+
+	if (shouldOpenFeedbackFromNotificationUrl()) {
+		startNotificationFeedbackOpen()
+	}
+
+	if (hasPendingNotificationFeedbackOpen() && getActiveVideoElement()) {
+		if (focusFeedbackTab()) {
+			stopNotificationFeedbackOpen()
+			return
+		}
+
+		const button = document.getElementById(feedbackButtonId)
+		if (isVisibleElement(button)) {
+			activateViewerButton()
+		} else {
+			void openFeedbackSidebar(header)
+		}
 	}
 }
 

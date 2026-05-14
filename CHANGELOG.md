@@ -2,6 +2,67 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.27 - 2026-05-14
+
+### Fixed
+
+- Detect the final Nextcloud notification file route when redirect strips custom Feedback Panel markers
+
+## 0.2.26 - 2026-05-14
+
+### Fixed
+
+- Preserve Feedback Panel notification intent through Nextcloud file-link redirects using a URL hash marker
+
+## 0.2.25 - 2026-05-14
+
+### Fixed
+
+- Use the same Feedback Panel opening path for notification links as the viewer quick-access button
+
+## 0.2.24 - 2026-05-14
+
+### Fixed
+
+- Focus the Feedback sidebar tab by visible tab label when Nextcloud does not expose stable tab IDs
+
+## 0.2.23 - 2026-05-14
+
+### Fixed
+
+- Keep trying to focus the Feedback Panel after opening a video from a notification until the sidebar tab is mounted
+
+## 0.2.22 - 2026-05-14
+
+### Added
+
+- Personal setting to keep feedback notification spam protection on or receive every comment notification
+
+### Changed
+
+- Notification clicks open the video and focus the Feedback Panel
+- Feedback notifications show a preview of the submitted comment
+
+## 0.2.21 - 2026-05-14
+
+### Changed
+
+- Notification clicks open the video and focus the Feedback Panel
+- Feedback notifications show a preview of the submitted comment
+
+## 0.2.20 - 2026-05-14
+
+### Fixed
+
+- Deliver owner notifications immediately after feedback is saved instead of waiting for Nextcloud cron
+
+## 0.2.19 - 2026-05-14
+
+### Fixed
+
+- Use the active visible public-share video when resolving folder-share feedback targets
+- Ignore hidden/stale Nextcloud viewer video elements when detecting the current playback context
+
 ## 0.2.18 - 2026-05-08
 
 ### Fixed

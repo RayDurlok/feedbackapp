@@ -19,17 +19,17 @@ class FeedbackNotificationService {
 	) {
 	}
 
-	public function notifyFileOwner(int $fileId, string $fileName, string $ownerUid, string $actorUid, string $actorDisplayName = ''): void {
+	public function notifyFileOwner(int $fileId, string $fileName, string $ownerUid, string $actorUid, string $actorDisplayName = '', string $message = '', bool $spamProtection = true): void {
 		if ($ownerUid === '' || $ownerUid === $actorUid) {
 			return;
 		}
 
 		$probe = $this->createBaseNotification($fileId, $ownerUid);
-		if ($this->notificationManager->getCount($probe) > 0) {
+		if ($spamProtection && $this->notificationManager->getCount($probe) > 0) {
 			return;
 		}
 
-		$link = $this->urlGenerator->getAbsoluteURL(sprintf('/f/%d?openfile=true', $fileId));
+		$link = $this->urlGenerator->getAbsoluteURL(sprintf('/f/%d?openfile=true&opendetails=true&feedbackapp=1#feedbackapp=1', $fileId));
 
 		$notification = $this->createBaseNotification($fileId, $ownerUid)
 			->setDateTime(new DateTime())
@@ -38,6 +38,7 @@ class FeedbackNotificationService {
 				'fileName' => $fileName,
 				'actorUid' => $actorUid,
 				'actorDisplayName' => $actorDisplayName,
+				'message' => $message,
 				'link' => $link,
 			]);
 
